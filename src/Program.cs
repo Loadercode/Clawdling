@@ -72,8 +72,10 @@ namespace Clawdling
 
     class Cfg
     {
-        public bool NewYear, Snow = true, Hidden, Codex = true, AutoUpdate = true;
-        public int Size = 1;
+        public bool NewYear, Snow = true, Hidden, Codex = true, AutoUpdate = true, Baby, ShowBaby = true;
+        public int Size = 1, Hugs;
+        /// <summary>Asset generator / tests: never touch the user's settings file.</summary>
+        public static bool ReadOnly;
         static string Dir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Clawdling"); } }
         static string FilePath { get { return Path.Combine(Dir, "settings.ini"); } }
         public static Cfg Load()
@@ -90,6 +92,9 @@ namespace Clawdling
                         else if (k == "snow") c.Snow = v == "1";
                         else if (k == "codex") c.Codex = v == "1";
                         else if (k == "autoupdate") c.AutoUpdate = v == "1";
+                        else if (k == "baby") c.Baby = v == "1";
+                        else if (k == "showbaby") c.ShowBaby = v == "1";
+                        else if (k == "hugs") int.TryParse(v, out c.Hugs);
                         else if (k == "size") { int s; if (int.TryParse(v, out s)) c.Size = Math.Max(0, Math.Min(2, s)); }
                     }
             }
@@ -98,10 +103,12 @@ namespace Clawdling
         }
         public void Save()
         {
+            if (ReadOnly) return;
             try
             {
                 Directory.CreateDirectory(Dir);
-                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\ncodex=" + (Codex ? 1 : 0) + "\r\nautoupdate=" + (AutoUpdate ? 1 : 0) + "\r\n");
+                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\ncodex=" + (Codex ? 1 : 0) + "\r\nautoupdate=" + (AutoUpdate ? 1 : 0)
+                    + "\r\nbaby=" + (Baby ? 1 : 0) + "\r\nshowbaby=" + (ShowBaby ? 1 : 0) + "\r\nhugs=" + Hugs + "\r\n");
             }
             catch { }
         }

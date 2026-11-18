@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck, Juggle, Spin, Stretch, Sneeze, Zen, Hug, Cover, Tug, Stare, Rps, Eat }
+    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck, Juggle, Spin, Stretch, Sneeze, Zen, Hug, Cover, Tug, Stare, Rps, Eat, Propose, Snuggle }
     enum Emo { Normal, Happy, Closed, Sleepy, Surprised, Angry, Sad, Love, Dizzy, Wink, Excited, Focus, Pleading, Laugh }
 
     class Part { public int k; public float x, y, vx, vy, life, max, size; public Color c; }
@@ -107,6 +107,7 @@ namespace Clawdling
             if (cfg.Hidden) Hide();
             UpdateStrip();
             if (leader == null && cfg.Codex) SetBuddy(true);
+            if (leader == null && cfg.Baby && cfg.ShowBaby) SetKid(true, false);
             if (leader == null)
             {
                 Updater.CleanupLater();
@@ -128,7 +129,8 @@ namespace Clawdling
         void ApplySize()
         {
             float[] bases = { 2f, 3f, 4f };
-            u = (float)Math.Max(2, Math.Round(bases[cfg.Size] * dpi));
+            if (isBaby) u = (float)Math.Max(1.5, Math.Round(bases[cfg.Size] * dpi * 0.62 * 2) / 2);
+            else u = (float)Math.Max(2, Math.Round(bases[cfg.Size] * dpi));
             k = u / 3f;
             CW = (int)(34 * u); CH = (int)(34 * u);
             Ox = CW / 2f; Oy = CH - 2 * u;
@@ -146,6 +148,7 @@ namespace Clawdling
             TickUpdates(dt);
             Frame(dt);
             if (buddy != null) { buddy.Frame(dt); UpdateDuo(dt); }
+            if (kid != null) kid.Frame(dt);
             bool fast = Busy || (buddy != null && buddy.Busy);
             bool allHidden = cfg.Hidden || (fsHidden && (buddy == null || buddy.fsHidden));
             int want = allHidden ? 250 : fast ? 15 : 33;
@@ -466,6 +469,7 @@ namespace Clawdling
                     if (t >= dur) GoIdle();
                     break;
                 case St.Tug: case St.Stare: case St.Rps: case St.Eat: UpdateFun(dt); break;
+                case St.Propose: case St.Snuggle: UpdateFamily(dt); break;
                 case St.Hug:
                     if (partT <= 0) { partT = 0.3f; Sp(0, dir * 5 + U.Rf(-2, 2), -12, U.Rf(-1, 1), -3, 1.5f, 0.45f, Color.FromArgb(255, 232, 64, 84)); }
                     if (t >= dur) Go(St.Love, 1.2f);
@@ -492,6 +496,9 @@ namespace Clawdling
             if (cfg.NewYear) { add(13, 2); add(15, 1.5f); }
             if (floor) add(14, 3);
             if (codex) add(16, 4);
+            if (isBaby) { add(24, 40); add(25, 7); }
+            Pet kd = (leader ?? this).kid;
+            if (!isBaby && kd != null && kd.Visible && Math.Abs(kd.px - px) < 300 * k && Math.Abs(kd.py - py) < 60 * k) add(26, 3);
             int hr = DateTime.Now.Hour;
             if (hr >= 23 || hr < 6) { add(9, 10); add(23, 2); }
             add(17, 2.5f); add(18, codex ? 3 : 1); add(19, 2); add(20, cfg.NewYear ? 2.5f : 1.2f);
@@ -526,7 +533,14 @@ namespace Clawdling
                 case 21: Go(St.Zen, U.Rf(5, 9)); if (U.Ch(0.5)) Say(U.Pick("Ом-м-м...", "Дзен...", "Я спокоен"), 1.6f); break;
                 case 22:
                     Face(leader ?? buddy); Go(St.Wave, 1.6f);
-                    Say(codex ? U.Pick("Клод! Привет!", "Эй, Клод, смотри!", "Я тут, если что!") : U.Pick("Привет, Кодекс!", "Как дела, зелёный?", "Не скучаешь?"), 1.6f);
+                    Say(isBaby ? U.Pick("Па-па!", "Агу!", "Ма-ма!") : codex ? U.Pick("Клод! Привет!", "Эй, Клод, смотри!", "Я тут, если что!") : U.Pick("Привет, Кодекс!", "Как дела, зелёный?", "Не скучаешь?"), 1.6f);
+                    break;
+                case 24: BabyToddle(); break;
+                case 25: BabyTalk(); break;
+                case 26:
+                    if (kd != null) Face(kd);
+                    Go(St.Love, 2f);
+                    Say(codex ? U.Pick("Это мой сын! Ну, наш", "Малыш, не ешь провода!", "Он умнее меня... уже") : U.Pick("Мой малыш!", "Расти большой, DeepSeek!", "Весь в меня"), 1.8f);
                     break;
                 case 23: Go(St.Yawn, 1.6f); Say(U.Pick("Поздно уже... спать пора", "Ты тоже не спишь?", "Ночь на дворе!"), 1.8f); break;
                 case 16: Go(St.Think, 2.4f); Say(U.Pick("Э-э-э...", "А что я делал?", "Бип-буп!", "Хе-хе", "Я забыл, зачем пришёл", "Где мой курсор?"), 1.8f); break;
@@ -628,6 +642,7 @@ namespace Clawdling
         {
             float g = Gr;
             vy += g * dt; if (vy > 2400 * k) vy = 2400 * k;
+            if (isBaby && !greeted && vy > 160 * k) vy = 160 * k; // gliding down on a heart balloon
             float nx = px + vx * dt, ny = py + vy * dt;
             var vs = SystemInformation.VirtualScreen;
             float wallK = flung ? 0.9f : 0.5f;
@@ -653,6 +668,7 @@ namespace Clawdling
             RefreshMonitor();
             if (surf == 0 && cfg.NewYear && strip != null && strip.Visible && impact > 200 * k) SnowPuff((int)Math.Min(14, impact / (80 * k)));
             if (pendingReact > 0) { int pr = pendingReact; pendingReact = 0; React(pr); return; }
+            if (!greeted && isBaby) { greeted = true; Go(St.Celebrate, 1.6f); Say("Агу! Я DeepSeek!", 2.4f); return; }
             if (!greeted) { greeted = true; Go(St.Wave, 1.8f); Say(codex ? (cfg.NewYear ? "Хо-хо! Я Кодекс!" : "Привет! Я Кодекс!") : (cfg.NewYear ? "Хо-хо-хо! Я Клод" : "Привет! Я Клод"), 2.6f); return; }
             if (AfterBump()) return;
             if (dodged) { dodged = false; Go(St.Laugh, 1f); Say(U.Pick("Мимо!", "Не попал!", "Ха, промах!"), 1.5f); return; }
@@ -1371,6 +1387,7 @@ namespace Clawdling
                     lean = ds * 0.6f + U.Sin(T * 4) * 0.15f;
                     if (ds > 0) { aR = 6; aL = 5; } else { aL = 6; aR = 5; }
                     emo = Emo.Happy; break;
+                case St.Propose: case St.Snuggle: PoseFamily(T, ds, ref bob, ref sx, ref sy, ref lean, ref sit, ref aL, ref aR, ref emo, ref mouth); break;
                 case St.Tug: case St.Stare: case St.Rps: case St.Eat: PoseFun(T, ds, ref bob, ref sx, ref sy, ref lean, ref legMode, ref aL, ref aR, ref emo, ref mouth); break;
                 case St.Cover: cover = true; emo = Emo.Closed; mouth = 3; bob = -Math.Abs(U.Sin(T * 2.5f)) * 0.3f; break;
             }
@@ -1404,6 +1421,7 @@ namespace Clawdling
             Bx(bBody, bx - bW / 2, bTop, bW, bH);
             Bx(bLight, bx - bW / 2, bTop, bW, 0.55f);
             Bx(bDark, bx - bW / 2, bBot - 0.75f, bW, 0.75f);
+            DrawTail(bx, bW, bTop, ds);
 
             // arms
             float armY = bTop + 3.4f * sy;
@@ -1469,6 +1487,7 @@ namespace Clawdling
                     Bx(bYellow, sxp - 0.3f, syp - 0.9f, 0.6f, 1.8f); Bx(bYellow, sxp - 0.9f, syp - 0.3f, 1.8f, 0.6f);
                 }
             DrawFunExtras(bx, bW, armY, headTop, ds);
+            DrawFamilyExtras(bx, bW, bTop, armY, headTop, ds);
             if (juggle)
                 for (int i = 0; i < 3; i++)
                 {
@@ -1529,6 +1548,7 @@ namespace Clawdling
                 switch (ee)
                 {
                     case Emo.Normal:
+                        if (isBaby) { Bx(bEye, cx - 0.7f, cy - 1.2f, 1.4f, 2.4f * sy); Bx(bWhite, cx - 0.45f, cy - 1.0f, 0.5f, 0.5f); break; }
                         if (!codex) { Bx(bEye, cx - 0.5f, cy - 1, 1, 2 * sy); break; }
                         if (side < 0) Bx(bEye, cx - 0.45f, cy - 0.7f, 0.9f, 1.5f * sy);          // small eye
                         else { float wx = cx - lx * 0.6f; Bx(bEye, wx - 0.75f, cy - 1.25f, 1.5f, 2.5f * sy); Bx(bWhite, wx - 0.55f, cy - 1.05f, 0.5f, 0.5f); } // big lazy eye
@@ -1663,7 +1683,7 @@ namespace Clawdling
             for (int i = 0; i < 3; i++)
             {
                 int idx = i;
-                miSize[i] = new ToolStripMenuItem(names[i], null, (s, e) => { cfg.Size = idx; cfg.Save(); ApplySize(); if (buddy != null) buddy.ApplySize(); });
+                miSize[i] = new ToolStripMenuItem(names[i], null, (s, e) => { cfg.Size = idx; cfg.Save(); ApplySize(); if (buddy != null) buddy.ApplySize(); if (kid != null) kid.ApplySize(); });
                 size.DropDownItems.Add(miSize[i]);
             }
             menu.Items.Add(size);
@@ -1688,6 +1708,8 @@ namespace Clawdling
             var duo = new ToolStripMenuItem("Кодекс");
             miCodex = new ToolStripMenuItem("Показывать Кодекса", null, (s, e) => { cfg.Codex = !cfg.Codex; cfg.Save(); SetBuddy(cfg.Codex); });
             duo.DropDownItems.Add(miCodex);
+            miKid = new ToolStripMenuItem("Показывать малыша DeepSeek", null, (s, e) => { cfg.ShowBaby = !cfg.ShowBaby; cfg.Save(); SetKid(cfg.ShowBaby, false); });
+            duo.DropDownItems.Add(miKid);
             duo.DropDownItems.Add(new ToolStripSeparator());
             var play = new ToolStripMenuItem("Играть");
             miGames = new ToolStripMenuItem[menuGames.Length];
@@ -1706,7 +1728,7 @@ namespace Clawdling
             menu.Items.Add(BuildUpdateMenu());
             menu.Items.Add(new ToolStripSeparator());
             miAuto = new ToolStripMenuItem("Запускать вместе с Windows", null, (s, e) => { Cfg.Autostart = !Cfg.Autostart; });
-            miHide = new ToolStripMenuItem("Спрятать питомцев", null, (s, e) => { cfg.Hidden = !cfg.Hidden; ApplyVisibility(); if (buddy != null) buddy.ApplyVisibility(); });
+            miHide = new ToolStripMenuItem("Спрятать питомцев", null, (s, e) => { cfg.Hidden = !cfg.Hidden; ApplyVisibility(); if (buddy != null) buddy.ApplyVisibility(); if (kid != null) kid.ApplyVisibility(); });
             menu.Items.Add(miAuto); menu.Items.Add(miHide);
             menu.Items.Add("Выход", null, (s, e) => ExitApp());
             menu.Opening += (s, e) => SyncMenu();
@@ -1722,6 +1744,7 @@ namespace Clawdling
             miAutoUpd.Checked = cfg.AutoUpdate;
             miHide.Text = cfg.Hidden ? "Показать питомцев" : "Спрятать питомцев";
             miCodex.Checked = buddy != null;
+            miKid.Visible = cfg.Baby; miKid.Checked = kid != null;
             for (int i = 0; i < miGames.Length; i++)
                 miGames[i].Enabled = buddy != null && (menuGames[i] != Game.Snow || (cfg.NewYear && cfg.Snow)) && (menuGames[i] != Game.Seek || SeekAllowed);
         }
@@ -1732,7 +1755,7 @@ namespace Clawdling
             tray.Icon = IconMaker.TrayIcon((int)Math.Round(16 * dpi));
             tray.Text = "Clawdling";
             tray.ContextMenuStrip = menu;
-            tray.MouseDoubleClick += (s, e) => { if (cfg.Hidden) { cfg.Hidden = false; ApplyVisibility(); if (buddy != null) buddy.ApplyVisibility(); } Summon(); };
+            tray.MouseDoubleClick += (s, e) => { if (cfg.Hidden) { cfg.Hidden = false; ApplyVisibility(); if (buddy != null) buddy.ApplyVisibility(); if (kid != null) kid.ApplyVisibility(); } Summon(); };
             tray.Visible = true;
         }
 
@@ -1766,8 +1789,9 @@ namespace Clawdling
             try { N.UnregisterHotKey(Handle, 1); N.UnregisterHotKey(Handle, 2); } catch { }
             bubble.Kill();
             if (buddy != null) buddy.bubble.Kill();
+            if (kid != null) kid.bubble.Kill();
             tray.Visible = false; tray.Dispose();
-            if (beforeExit != null) { Hide(); if (buddy != null) buddy.Hide(); try { beforeExit(); } catch { } }
+            if (beforeExit != null) { Hide(); if (buddy != null) buddy.Hide(); if (kid != null) kid.Hide(); try { beforeExit(); } catch { } }
             Application.Exit();
         }
     }

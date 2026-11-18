@@ -13,6 +13,7 @@ namespace Clawdling
     {
         internal Pet(int unit, bool ny) : base(10, 10, false)
         {
+            Cfg.ReadOnly = true;
             cfg = new Cfg(); cfg.NewYear = ny; cfg.Snow = true;
             dpi = 1; myPid = 0; bubble = null; timer = null; pipe = null;
             u = unit; k = u / 3f;
@@ -24,7 +25,7 @@ namespace Clawdling
 
         internal void Pose(St s, int d)
         {
-            parts.Clear(); dir = d; sink = 0; rot = 0; snowOnBody = 0; holding = false; hitBySnow = false;
+            parts.Clear(); dir = d; sink = 0; dressed = false; rot = 0; snowOnBody = 0; holding = false; hitBySnow = false;
             blinkT = 0; blinkIn = 9999; idleTotal = 0; running = false; lookX = d * 0.3f; lookY = 0.1f;
             hatTip = -d * 3.2f; hatA = 0; hatV = 0; vx = 0; vy = 0; partT = 0;
             walkTo = px + d * 100000; walkSpd = 45 * k;
@@ -48,6 +49,9 @@ namespace Clawdling
         internal void SetVy(float v) { vy = v * k; }
         internal void SetRope(float len) { ropeLen = len; }
         internal void SetRps(int s) { rpsSign = s; }
+        internal void MakeBaby() { isBaby = true; ApplySkin(); }
+        internal void SetDressed() { dressed = true; }
+        internal void SetGreeted(bool g) { greeted = g; }
         internal void SetSquash() { squashT = 9; flung = true; bounces = 1; }
         internal St State { get { return st; } }
         internal float Unit { get { return u; } }
@@ -182,6 +186,20 @@ namespace Clawdling
             Still(cx, "c_jump.png", St.Jump, 0f, -1, p => p.SetVy(-200));
             Still(cx, "c_lookup.png", St.Idle, 0.2f, -1, p => p.SetLook(-0.5f, -0.8f));
             Still(cxn, "cn_hit.png", St.Hit, 0.3f, -1, p => p.SetSnow(1, -1));
+            // wedding easter egg
+            var kd = new Pet(6, false); kd.MakeBaby();
+            Still(kd, "k_idle.png", St.Idle, 0.2f, 1, p => p.SetLook(0.3f, 0.1f));
+            Still(kd, "k_happy.png", St.Happy, 0.12f, -1, null);
+            Still(kd, "k_fall.png", St.Fall, 0f, 1, p => { p.SetVy(50); p.SetGreeted(false); });
+            Still(kd, "k_walk.png", St.Walk, 0.3f, 1, null);
+            Still(plain, "f_propose.png", St.Propose, 0.8f, 1, null);
+            Still(cx, "f_love.png", St.Love, 1.0f, -1, p => p.SetDressed());
+            Still(plain, "f_bow.png", St.Celebrate, 0.55f, 1, p => p.SetDressed());
+            Still(cx, "f_veil.png", St.Celebrate, 0.4f, -1, p => p.SetDressed());
+            Still(plain, "f_snug.png", St.Snuggle, 1.5f, 1, null);
+            Still(cx, "f_snug2.png", St.Snuggle, 1.5f, -1, null);
+            Still(plain, "f_cel.png", St.Celebrate, 0.3f, 1, null);
+            Still(cx, "f_cel2.png", St.Celebrate, 0.5f, -1, null);
             Still(plain, "e_tug.png", St.Tug, 0.3f, 1, p => p.SetRope(12));
             Still(cx, "c_tug.png", St.Tug, 0.5f, -1, p => p.SetRope(12));
             Still(plain, "e_stare.png", St.Stare, 0.3f, 1, null);

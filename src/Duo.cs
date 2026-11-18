@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank, Race, Hug, Seek, Mimic, Nap, HighJump, Tug, Stare, Rps }
+    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank, Race, Hug, Seek, Mimic, Nap, HighJump, Tug, Stare, Rps, Wedding }
 
     partial class Pet
     {
@@ -29,6 +29,7 @@ namespace Clawdling
 
         void ApplySkin()
         {
+            if (isBaby) { SkinBaby(); return; }
             if (!codex) return;
             // OpenAI / GPT green
             bBody.Color = Color.FromArgb(255, 16, 163, 127);
@@ -160,8 +161,8 @@ namespace Clawdling
 
         static readonly string[] gameNames = { "", "Догонялки", "Драка", "Снежная битва", "Чехарда", "Дай пять", "Танец", "Розыгрыш «БУ!»",
                                                "Гонки", "Обнимашки", "Прятки", "Повторялка", "Тихий час", "Кто выше прыгнет",
-                                               "Перетягивание каната", "Гляделки", "Камень-ножницы-бумага" };
-        static readonly string[] playIds = { "", "tag", "fight", "snow", "leap", "five", "dance", "prank", "race", "hug", "seek", "copy", "nap", "jump", "tug", "stare", "rps" };
+                                               "Перетягивание каната", "Гляделки", "Камень-ножницы-бумага", "Свадьба" };
+        static readonly string[] playIds = { "", "tag", "fight", "snow", "leap", "five", "dance", "prank", "race", "hug", "seek", "copy", "nap", "jump", "tug", "stare", "rps", "wedding" };
         static readonly Game[] menuGames = { Game.Tag, Game.Fight, Game.Snow, Game.Race, Game.Seek, Game.Leap, Game.HighJump,
                                              Game.Tug, Game.Rps, Game.Stare, Game.Mimic, Game.High5, Game.Hug, Game.Dance, Game.Nap, Game.Prank };
 
@@ -184,7 +185,7 @@ namespace Clawdling
                 return;
             }
             gT += dt; gPhT += dt;
-            if (!gA.OkInGame || !gB.OkInGame || gA.wa != gB.wa || gT > (game == Game.Seek ? 75 : 45)) { EndGame(); return; }
+            if (!gA.OkInGame || !gB.OkInGame || gA.wa != gB.wa || gT > (game == Game.Seek ? 75 : game == Game.Wedding ? 95 : 45)) { EndGame(); return; }
             switch (game)
             {
                 case Game.Tag: TickTag(dt); break;
@@ -201,6 +202,7 @@ namespace Clawdling
                 case Game.Tug: TickTug(dt); break;
                 case Game.Stare: TickStare(dt); break;
                 case Game.Rps: TickRps(dt); break;
+                case Game.Wedding: TickWedding(dt); break;
             }
         }
 
@@ -269,6 +271,9 @@ namespace Clawdling
                     gGoal = 4; gA.gBest = gB.gBest = 0;
                     gA.Say(U.Pick("Кто выше прыгнет?", "Прыжки в высоту!"), 1.6f);
                     break;
+                case Game.Wedding:
+                    if (gA.codex) { var tw = gA; gA = gB; gB = tw; }
+                    break;
                 case Game.Prank:
                     if (gA.codex) { var tmp = gA; gA = gB; gB = tmp; }
                     if (gA.st != St.Sleep) gA.Go(St.Sleep, 40);
@@ -282,10 +287,10 @@ namespace Clawdling
             foreach (var p in new[] { gA, gB })
             {
                 if (p == null) continue;
-                p.inGame = false; p.hideOk = false;
+                p.inGame = false; p.hideOk = false; p.dressed = false;
                 if (p.st == St.Hidden) { p.t = 0; p.dur = 0.8f; }
                 else if (p.st == St.Peek) p.dur = p.t + 0.3f;
-                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle || p.st == St.Cover || p.st == St.Tug || p.st == St.Stare || p.st == St.Rps)) { p.GoIdle(); }
+                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle || p.st == St.Cover || p.st == St.Tug || p.st == St.Stare || p.st == St.Rps || p.st == St.Propose || p.st == St.Snuggle)) { p.GoIdle(); }
             }
             game = Game.None;
             gCd = nextGame != Game.None ? 3.5f : U.Rf(16, 40);
@@ -480,6 +485,11 @@ namespace Clawdling
                 else if (game == Game.Hug)
                 {
                     A.Go(St.Hug, 2.6f); B.Go(St.Hug, 2.6f);
+                    if (!cfg.Baby)
+                    {
+                        cfg.Hugs++; cfg.Save();
+                        if (cfg.Hugs >= 3 && U.Ch(0.5)) { nextGame = Game.Wedding; nextA = A.codex ? B : A; }
+                    }
                     B.Say(B.codex ? U.Pick("Ты мой лучший друг!", "Не отпущу!", "Тёплый!") : U.Pick("Я тоже рад!", "Обнимашки!", "Ты лучший, Кодекс"), 1.6f);
                 }
                 else

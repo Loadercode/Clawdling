@@ -69,7 +69,7 @@ namespace Clawdling
         void GiveCookies()
         {
             if (game != Game.None) EndGame();
-            foreach (var p in new[] { this, buddy })
+            foreach (var p in new[] { this, buddy, kid })
             {
                 if (p == null || !p.Visible || !p.OnGround || p.HiddenState) continue;
                 bool gulp = p.codex && U.Ch(0.35);

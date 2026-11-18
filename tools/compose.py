@@ -412,6 +412,42 @@ def solo():
     im.convert("RGB").save(os.path.join(OUT, "solo.png"), optimize=True)
 
 
+# ---------------------------------------------------------------- wedding easter egg
+def family():
+    cols, cw, ch = 4, 300, 300
+    W, H = cols * cw + 80, ch + 150
+    im = vgrad(W, H, (34, 22, 34), (44, 30, 46))
+    d = ImageDraw.Draw(im)
+    d.text((40, 32), "Пасхалка: свадьба", font=font("seguibl.ttf", 40), fill=(255, 255, 255, 255))
+    d.text((42, 86), "Если они часто обнимаются, однажды Клод встанет на колено...",
+           font=font("segoeui.ttf", 20), fill=(214, 190, 214, 255))
+    lf = font("seguisb.ttf", 20)
+    KS = 0.62
+
+    def ring_sparkle(c, x, f):
+        dd = ImageDraw.Draw(c)
+        for (sx, sy) in [(x + 2, f - 48), (x + 18, f - 64)]:
+            dd.line((sx - 5, sy, sx + 5, sy), fill=(255, 240, 160, 255), width=2)
+            dd.line((sx, sy - 5, sx, sy + 5), fill=(255, 240, 160, 255), width=2)
+
+    scenes = [
+        ("Предложение", lambda c, x, f: (gpet(c, "f_propose", x - 40, f), gpet(c, "f_love", x + 60, f), ring_sparkle(c, x, f))),
+        ("Свадьба", lambda c, x, f: (gpet(c, "f_bow", x - 45, f), gpet(c, "f_veil", x + 45, f))),
+        ("Шуры-муры", lambda c, x, f: (gpet(c, "f_snug", x - 22, f), gpet(c, "f_snug2", x + 22, f))),
+        ("Малыш DeepSeek!", lambda c, x, f: (gpet(c, "f_cel", x - 80, f), gpet(c, "f_cel2", x + 80, f),
+                                            gpet(c, "k_fall", x, f - 70, S * KS))),
+    ]
+    for i, (label, draw) in enumerate(scenes):
+        x0, y0 = 40 + i * cw, 130
+        d.rounded_rectangle((x0 + 8, y0 + 8, x0 + cw - 8, y0 + ch - 8), 22, fill=(60, 40, 62, 255), outline=(98, 70, 100, 255))
+        card = Image.new("RGBA", (cw - 20, ch - 20), (0, 0, 0, 0))
+        draw(card, (cw - 20) / 2, ch - 82)
+        im.alpha_composite(card, (x0 + 10, y0 + 10))
+        tw = d.textlength(label, font=lf)
+        d.text((x0 + cw / 2 - tw / 2, y0 + ch - 52), label, font=lf, fill=(244, 232, 244, 255))
+    im.convert("RGB").save(os.path.join(OUT, "family.png"), optimize=True)
+
+
 def duo_gif():
     W, H, TB = 760, 300, 250
     base = night(W, H, 40)
@@ -431,6 +467,7 @@ duo_cover()
 games()
 solo()
 duo_gif()
+family()
 emotions()
 notifications()
 walk_gif()
