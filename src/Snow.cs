@@ -36,6 +36,7 @@ namespace Clawdling
     {
         public float x, y, vx, vy, t, T, x0, y0, tx, ty, d, spin;
         public bool aimed, user, held, dodgeChecked, cursorTarget;
+        public Pet targetPet, thrower;
         public int splatKind;
         static readonly SolidBrush speck = new SolidBrush(Color.FromArgb(70, 120, 145, 180));
 

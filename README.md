@@ -42,6 +42,14 @@
 
 <p align="center"><img src="docs/snowball.gif" width="600" alt="Клод лепит и кидает снежок"></p>
 
+**Кодекс — второй питомец.** Зелёный, как GPT, такой же формы, но чуть глуповатый: глаза разного размера, торчит язык, спотыкается на бегу, иногда кидает снежок себе на голову и забывает, зачем пришёл. Вместе с Клодом они часто играют:
+- **Догонялки**: салят друг друга, а прижатый к краю экрана перепрыгивает через догоняющего
+- **Драка**: облако пыли со звёздочками, проигравший видит звёздочки и может потребовать реванш
+- **Снежная битва** (в новогоднем режиме): разбегаются и закидывают друг друга снежками, уворачиваются, считают попадания
+- **Чехарда**, **Дай пять**, **Танец**, а ещё Кодекс любит подкрасться к спящему Клоду и крикнуть «БУ!»
+
+Включается и выключается в меню → «Кодекс», там же можно запустить любую игру.
+
 ## Установка
 
 1. Скачай `Clawdling.exe` из [Releases](../../releases/latest)
@@ -74,6 +82,14 @@
 Clawdling.exe notify "текст" "заголовок" done|attn|info   — показать уведомление
 Clawdling.exe ask "текст"                                 — спросить; выводит allow / deny / none
 Clawdling.exe hook                                        — режим хука Claude Code (JSON на stdin)
+Clawdling.exe play tag|fight|snow|leap|five|dance         — Клод и Кодекс начинают игру
+Clawdling.exe codex '<json>'                              — уведомление от OpenAI Codex CLI (его показывает Кодекс)
+```
+
+Чтобы Кодекс сообщал о завершении работы OpenAI Codex CLI, добавь в `%USERPROFILE%\.codex\config.toml`:
+
+```toml
+notify = ["C:/Users/you/AppData/Local/Programs/Clawdling/Clawdling.exe", "codex"]
 ```
 
 ## Сборка
@@ -90,10 +106,10 @@ build.cmd
 
 ## English
 
-Clawdling is a lightweight (~90 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
+Clawdling is a lightweight (~90 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, leapfrog, high fives and dancing; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
 
 ---
 
-Неофициальный фанатский проект, не связан с Anthropic. Claude и Claude Code — товарные знаки Anthropic.
+Неофициальный фанатский проект, не связан с Anthropic. Claude и Claude Code — товарные знаки Anthropic, Codex и GPT — товарные знаки OpenAI.
 
 Лицензия: [MIT](LICENSE) © 2026 LoaderCode

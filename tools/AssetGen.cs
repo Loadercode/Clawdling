@@ -41,6 +41,7 @@ namespace Clawdling
             if (look) UpdateLook(dt);
         }
 
+        internal void MakeCodex() { codex = true; ApplySkin(); }
         internal void SetLook(float lx, float ly) { lookX = lx; lookY = ly; }
         internal void SetSnow(float a, int side) { snowOnBody = a; snowSide = side; }
         internal void SetDur(float d) { dur = d; }
@@ -133,6 +134,22 @@ namespace Clawdling
             Still(ny, "n_shiver.png", St.Shiver, 0.8f, 1, null);
             Still(ny, "n_celebrate.png", St.Celebrate, 0.55f, 1, null);
             Still(ny, "n_done.png", St.Celebrate, 0.4f, -1, null);
+
+            // Codex
+            var cx = new Pet(6, false); cx.MakeCodex();
+            var cxn = new Pet(6, true); cxn.MakeCodex();
+            Still(cx, "c_idle.png", St.Idle, 0.2f, -1, p => p.SetLook(-0.3f, 0.1f));
+            Still(cx, "c_happy.png", St.Happy, 0.12f, -1, null);
+            Still(cx, "c_trip.png", St.Trip, 0.9f, -1, null);
+            Still(cx, "c_brawl.png", St.Brawl, 0.4f, -1, null);
+            Still(cx, "c_high5.png", St.HighFive, 0.5f, -1, null);
+            Still(cx, "c_duck.png", St.Duck, 0.5f, -1, null);
+            Still(cx, "c_think.png", St.Think, 1.3f, -1, null);
+            Still(cx, "c_laugh.png", St.Laugh, 0.33f, -1, null);
+            Still(cxn, "cn_idle.png", St.Idle, 0.2f, -1, p => p.SetLook(-0.3f, 0.1f));
+            Still(cxn, "cn_windup.png", St.WindUp, 0.1f, -1, null);
+            Still(plain, "e_brawl.png", St.Brawl, 0.4f, 1, null);
+            Still(plain, "e_high5.png", St.HighFive, 0.5f, 1, null);
 
             // ---- animations (20 fps) ----
             float fdt = 0.05f;

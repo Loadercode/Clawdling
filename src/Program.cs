@@ -24,7 +24,7 @@ namespace Clawdling
             {
                 string a = args[0].ToLowerInvariant().TrimStart('-', '/');
                 if (a == "hook") return HookClient.RunHook();
-                if (a == "version") { HookClient.WriteOut("Clawdling 1.0.0\n"); return 0; }
+                if (a == "version") { HookClient.WriteOut("Clawdling 1.1.0\n"); return 0; }
                 if (a == "notify")
                 {
                     HookClient.Send(args.Length > 3 ? args[3] : "info", args.Length > 2 ? args[2] : "Claude", args.Length > 1 ? args[1] : "");
@@ -36,6 +36,8 @@ namespace Clawdling
                     HookClient.WriteOut(r + "\n");
                     return r == "allow" ? 0 : 1;
                 }
+                if (a == "play") { HookClient.Send("play", args.Length > 1 ? args[1] : "", ""); return 0; }
+                if (a == "codex") return HookClient.RunCodex(args.Length > 1 ? args[args.Length - 1] : "");
                 if (a == "makeicon" && args.Length > 1) { IconMaker.SaveIco(args[1]); return 0; }
             }
             bool created;
@@ -51,7 +53,7 @@ namespace Clawdling
 
     class Cfg
     {
-        public bool NewYear, Snow = true, Hidden;
+        public bool NewYear, Snow = true, Hidden, Codex = true;
         public int Size = 1;
         static string Dir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Clawdling"); } }
         static string FilePath { get { return Path.Combine(Dir, "settings.ini"); } }
@@ -67,6 +69,7 @@ namespace Clawdling
                         string k = line.Substring(0, i).Trim(), v = line.Substring(i + 1).Trim();
                         if (k == "newyear") c.NewYear = v == "1";
                         else if (k == "snow") c.Snow = v == "1";
+                        else if (k == "codex") c.Codex = v == "1";
                         else if (k == "size") { int s; if (int.TryParse(v, out s)) c.Size = Math.Max(0, Math.Min(2, s)); }
                     }
             }
@@ -78,7 +81,7 @@ namespace Clawdling
             try
             {
                 Directory.CreateDirectory(Dir);
-                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\n");
+                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\ncodex=" + (Codex ? 1 : 0) + "\r\n");
             }
             catch { }
         }
@@ -183,6 +186,28 @@ namespace Clawdling
                 }
             }
             return "none";
+        }
+
+        /// <summary>OpenAI Codex CLI "notify" program: gets one JSON argument, e.g. {"type":"agent-turn-complete","last-assistant-message":"..."}.</summary>
+        public static int RunCodex(string json)
+        {
+            string type = "", msg = "";
+            try
+            {
+                var d = new JavaScriptSerializer().DeserializeObject(json) as Dictionary<string, object>;
+                if (d != null)
+                {
+                    object o;
+                    if (d.TryGetValue("type", out o) && o != null) type = o.ToString();
+                    if (d.TryGetValue("last-assistant-message", out o) && o != null) msg = o.ToString();
+                }
+            }
+            catch { }
+            msg = msg.Replace("\r", " ").Replace("\n", " ").Trim();
+            if (msg.Length > 90) msg = msg.Substring(0, 87).TrimEnd() + "...";
+            if (type == "agent-turn-complete" || type == "") Send("codex-done", "Codex: готово!", msg.Length > 0 ? msg : "Я закончил работу");
+            else Send("codex-info", "Codex", type);
+            return 0;
         }
 
         public static void WriteOut(string s)
