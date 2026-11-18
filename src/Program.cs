@@ -24,7 +24,7 @@ namespace Clawdling
             {
                 string a = args[0].ToLowerInvariant().TrimStart('-', '/');
                 if (a == "hook") return HookClient.RunHook();
-                if (a == "version") { HookClient.WriteOut("Clawdling 1.2.0\n"); return 0; }
+                if (a == "version") { HookClient.WriteOut("Clawdling 1.3.0\n"); return 0; }
                 if (a == "notify")
                 {
                     HookClient.Send(args.Length > 3 ? args[3] : "info", args.Length > 2 ? args[2] : "Claude", args.Length > 1 ? args[1] : "");
