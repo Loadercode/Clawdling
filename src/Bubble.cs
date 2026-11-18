@@ -8,7 +8,7 @@ using Microsoft.Win32;
 namespace Clawdling
 {
     /// <summary>Speech bubble / notification card. Kind: 0 speech, 1 done, 2 attention, 3 ask (buttons), 4 info.</summary>
-    class Bubble : LayeredWindow
+    partial class Bubble : LayeredWindow
     {
         readonly float s;
         public bool Active, IsClosing; public int Kind;

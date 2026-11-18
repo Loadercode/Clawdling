@@ -13,7 +13,7 @@ namespace Clawdling
     class Part { public int k; public float x, y, vx, vy, life, max, size; public Color c; }
     class WinInfo { public IntPtr h; public N.RECT r; }
 
-    class Pet : LayeredWindow
+    partial class Pet : LayeredWindow
     {
         // ---------- config / geometry ----------
         readonly Cfg cfg;
