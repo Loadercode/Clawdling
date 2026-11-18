@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank, Race, Hug, Seek, Mimic, Nap, HighJump }
+    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank, Race, Hug, Seek, Mimic, Nap, HighJump, Tug, Stare, Rps }
 
     partial class Pet
     {
@@ -159,10 +159,11 @@ namespace Clawdling
         float gWait, gBest; int gHits, gMove; Pet gWin; bool hideOk;
 
         static readonly string[] gameNames = { "", "Догонялки", "Драка", "Снежная битва", "Чехарда", "Дай пять", "Танец", "Розыгрыш «БУ!»",
-                                               "Гонки", "Обнимашки", "Прятки", "Повторялка", "Тихий час", "Кто выше прыгнет" };
-        static readonly string[] playIds = { "", "tag", "fight", "snow", "leap", "five", "dance", "prank", "race", "hug", "seek", "copy", "nap", "jump" };
+                                               "Гонки", "Обнимашки", "Прятки", "Повторялка", "Тихий час", "Кто выше прыгнет",
+                                               "Перетягивание каната", "Гляделки", "Камень-ножницы-бумага" };
+        static readonly string[] playIds = { "", "tag", "fight", "snow", "leap", "five", "dance", "prank", "race", "hug", "seek", "copy", "nap", "jump", "tug", "stare", "rps" };
         static readonly Game[] menuGames = { Game.Tag, Game.Fight, Game.Snow, Game.Race, Game.Seek, Game.Leap, Game.HighJump,
-                                             Game.Mimic, Game.High5, Game.Hug, Game.Dance, Game.Nap, Game.Prank };
+                                             Game.Tug, Game.Rps, Game.Stare, Game.Mimic, Game.High5, Game.Hug, Game.Dance, Game.Nap, Game.Prank };
 
         void UpdateDuo(float dt)
         {
@@ -197,6 +198,9 @@ namespace Clawdling
                 case Game.Mimic: TickMimic(dt); break;
                 case Game.Nap: TickNap(dt); break;
                 case Game.HighJump: TickJump(dt); break;
+                case Game.Tug: TickTug(dt); break;
+                case Game.Stare: TickStare(dt); break;
+                case Game.Rps: TickRps(dt); break;
             }
         }
 
@@ -206,7 +210,7 @@ namespace Clawdling
         Game PickGame()
         {
             //          tag fight snow                  leap hi5 dance prank race hug  seek                  copy nap jump
-            float[] w = { 0, 26, 16, SnowAllowed ? 30 : 0, 12, 10, 8, 0, 14, 9, SeekAllowed ? 13 : 0, 12, 5, 11 };
+            float[] w = { 0, 26, 16, SnowAllowed ? 30 : 0, 12, 10, 8, 0, 14, 9, SeekAllowed ? 13 : 0, 12, 5, 11, 11, 8, 10 };
             float sum = 0; foreach (var x in w) sum += x;
             float r = U.Rf(0, sum);
             for (int i = 1; i < w.Length; i++) { r -= w[i]; if (r <= 0) return (Game)i; }
@@ -281,7 +285,7 @@ namespace Clawdling
                 p.inGame = false; p.hideOk = false;
                 if (p.st == St.Hidden) { p.t = 0; p.dur = 0.8f; }
                 else if (p.st == St.Peek) p.dur = p.t + 0.3f;
-                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle || p.st == St.Cover)) { p.GoIdle(); }
+                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle || p.st == St.Cover || p.st == St.Tug || p.st == St.Stare || p.st == St.Rps)) { p.GoIdle(); }
             }
             game = Game.None;
             gCd = nextGame != Game.None ? 3.5f : U.Rf(16, 40);

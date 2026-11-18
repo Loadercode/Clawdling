@@ -100,7 +100,7 @@ def hero():
     y = 292
     for line in ["Гуляет по экрану и окнам, болтает лапками, когда его таскаешь",
                  "Приносит уведомления Claude Code: «готово», «нужен ответ», «можно?»",
-                 "Друг Кодекс и 12 совместных игр: догонялки, драки, снежки, прятки"]:
+                 "Друг Кодекс и 16 совместных игр: догонялки, драки, снежки, прятки"]:
         d.ellipse((88, y + 12, 98, y + 22), fill=(CODEX if "Кодекс" in line else CLAUDE) + (255,))
         d.text((112, y), line, font=font("segoeui.ttf", 22), fill=(200, 205, 222, 255))
         y += 38
@@ -279,7 +279,7 @@ def duo_cover():
     for col, line in [(CLAUDE, "Клод приносит уведомления Claude Code"),
                       (CODEX, "Кодекс — его зелёный и чуть глуповатый друг"),
                       ((240, 196, 64), "Дерутся, кидаются снежками, играют в прятки,"),
-                      ((240, 196, 64), "  догонялки, гонки, чехарду и ещё 6 игр")]:
+                      ((240, 196, 64), "  догонялки, гонки, чехарду и ещё 10 игр")]:
         if not line.startswith("  "):
             d.ellipse((78, y + 12, 88, y + 22), fill=col + (255,))
         d.text((102, y), line.strip(), font=font("segoeui.ttf", 23), fill=(200, 205, 222, 255))
@@ -356,11 +356,14 @@ GAME_CARDS = [
     ("Танец", lambda c, x, f: (gpet(c, "e_dance", x - 45, f), gpet(c, "c_dance", x + 45, f))),
     ("Тихий час", lambda c, x, f: (gpet(c, "e_sleep", x - 36, f), gpet(c, "c_sleep", x + 36, f))),
     ("Розыгрыш «БУ!»", g_boo),
+    ("Перетягивание каната", lambda c, x, f: (gpet(c, "e_tug", x - 61, f), gpet(c, "c_tug", x + 61, f))),
+    ("Гляделки", lambda c, x, f: (gpet(c, "e_stare", x - 36, f), gpet(c, "c_stare", x + 36, f))),
+    ("Камень-ножницы-бумага", lambda c, x, f: (gpet(c, "e_rps", x - 46, f), gpet(c, "c_rps", x + 46, f))),
 ]
 
 
 def games():
-    cols, cw, ch = 4, 300, 250
+    cols, cw, ch = 5, 300, 250
     W, H = cols * cw + 80, 3 * ch + 150
     im = vgrad(W, H, (22, 30, 30), (30, 38, 40))
     d = ImageDraw.Draw(im)
@@ -387,14 +390,15 @@ def games():
 
 # ---------------------------------------------------------------- solo actions
 def solo():
-    cells = [("e_juggle", "Жонглирует"), ("e_zen", "Медитирует"), ("e_stretch", "Делает зарядку"),
-             ("c_juggle", "Жонглирует... почти"), ("c_spin", "Ловит свой хвост"), ("c_sneeze", "Чихает")]
-    cols, cw, ch = 3, 290, 240
+    cells = [("e_juggle", "Жонглирует"), ("e_zen", "Медитирует"), ("e_stretch", "Делает зарядку"), ("e_eat", "Ест печеньку"),
+             ("c_juggle", "Жонглирует... почти"), ("c_spin", "Ловит свой хвост"), ("c_sneeze", "Чихает"), ("e_squash", "Пружинит от пола")]
+    cols, cw, ch = 4, 290, 240
     W, H = cols * cw + 80, 2 * ch + 150
     im = vgrad(W, H, (26, 23, 21), (36, 31, 28))
     d = ImageDraw.Draw(im)
     d.text((40, 32), "Когда скучно одному", font=font("seguibl.ttf", 40), fill=(255, 255, 255, 255))
-    d.text((42, 86), "А ещё машут друг другу, зевают, спят и спотыкаются", font=font("segoeui.ttf", 20), fill=(190, 182, 176, 255))
+    d.text((42, 86), "А ещё машут друг другу, зевают, а если кинуть одного в другого — сбивает его как кеглю",
+           font=font("segoeui.ttf", 20), fill=(190, 182, 176, 255))
     lf = font("seguisb.ttf", 20)
     for i, (name, label) in enumerate(cells):
         cx, cy = 40 + (i % cols) * cw, 130 + (i // cols) * ch

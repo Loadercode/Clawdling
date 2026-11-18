@@ -46,6 +46,9 @@ namespace Clawdling
         internal void SetSnow(float a, int side) { snowOnBody = a; snowSide = side; }
         internal void SetDur(float d) { dur = d; }
         internal void SetVy(float v) { vy = v * k; }
+        internal void SetRope(float len) { ropeLen = len; }
+        internal void SetRps(int s) { rpsSign = s; }
+        internal void SetSquash() { squashT = 9; flung = true; bounces = 1; }
         internal St State { get { return st; } }
         internal float Unit { get { return u; } }
         internal int Dir { get { return dir; } }
@@ -179,6 +182,16 @@ namespace Clawdling
             Still(cx, "c_jump.png", St.Jump, 0f, -1, p => p.SetVy(-200));
             Still(cx, "c_lookup.png", St.Idle, 0.2f, -1, p => p.SetLook(-0.5f, -0.8f));
             Still(cxn, "cn_hit.png", St.Hit, 0.3f, -1, p => p.SetSnow(1, -1));
+            Still(plain, "e_tug.png", St.Tug, 0.3f, 1, p => p.SetRope(12));
+            Still(cx, "c_tug.png", St.Tug, 0.5f, -1, p => p.SetRope(12));
+            Still(plain, "e_stare.png", St.Stare, 0.3f, 1, null);
+            Still(cx, "c_stare.png", St.Stare, 0.3f, -1, null);
+            Still(plain, "e_rps.png", St.Rps, 0.3f, 1, p => p.SetRps(0));
+            Still(cx, "c_rps.png", St.Rps, 0.3f, -1, p => p.SetRps(1));
+            Still(plain, "e_eat.png", St.Eat, 0.2f, 1, p => p.SetDur(3.2f));
+            Still(cx, "c_eat.png", St.Eat, 1.0f, -1, p => p.SetDur(3.2f));
+            Still(plain, "e_squash.png", St.Fall, 0f, 1, p => p.SetSquash());
+            Still(cx, "c_bounce.png", St.Fall, 0f, -1, p => { p.SetVy(-300); p.SetSquash(); p.SetDur(0); });
             Still(cxn, "cn_happy.png", St.Happy, 0.12f, -1, null);
 
             // ---- animations (20 fps) ----

@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck, Juggle, Spin, Stretch, Sneeze, Zen, Hug, Cover }
+    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck, Juggle, Spin, Stretch, Sneeze, Zen, Hug, Cover, Tug, Stare, Rps, Eat }
     enum Emo { Normal, Happy, Closed, Sleepy, Surprised, Angry, Sad, Love, Dizzy, Wink, Excited, Focus, Pleading, Laugh }
 
     class Part { public int k; public float x, y, vx, vy, life, max, size; public Color c; }
@@ -97,6 +97,7 @@ namespace Clawdling
             timer = new System.Windows.Forms.Timer(); timer.Interval = 33; timer.Tick += (s, e) => Tick(); timer.Start();
             pipe = new PipeServer(this); pipe.Start();
             N.RegisterHotKey(Handle, 1, 0x0002 | 0x0001 | 0x4000, (uint)Keys.S); // Ctrl+Alt+S
+            N.RegisterHotKey(Handle, 2, 0x0002 | 0x0001 | 0x4000, (uint)Keys.P); // Ctrl+Alt+P
             gCd = U.Rf(10, 18);
         }
 
@@ -110,7 +111,12 @@ namespace Clawdling
 
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == 0x0312) { UserThrowAtPet(); return; } // WM_HOTKEY
+            if (m.Msg == 0x0312) // WM_HOTKEY
+            {
+                if (m.WParam.ToInt32() == 2) { if (buddy == null) SetBuddy(true); PlayNow(PickGame()); }
+                else UserThrowAtPet();
+                return;
+            }
             base.WndProc(ref m);
         }
 
@@ -260,6 +266,7 @@ namespace Clawdling
         void UpdatePet(float dt)
         {
             t += dt;
+            if (squashT > 0) squashT -= dt;
             if (snowOnBody > 0 && st != St.Hit && st != St.Shake) snowOnBody = Math.Max(0, snowOnBody - dt * 0.25f);
             blinkIn -= dt; if (blinkIn <= 0) { blinkT = 0.13f; blinkIn = U.Rf(1.8f, 5f); }
             if (blinkT > 0) blinkT -= dt;
@@ -452,6 +459,7 @@ namespace Clawdling
                     if (partT <= 0) { partT = 0.4f; Sp(7, U.Rf(-8, 8), U.Rf(-13, -3), 0, -1.6f, 1.3f, 0.45f, Color.FromArgb(255, 176, 140, 255)); }
                     if (t >= dur) GoIdle();
                     break;
+                case St.Tug: case St.Stare: case St.Rps: case St.Eat: UpdateFun(dt); break;
                 case St.Hug:
                     if (partT <= 0) { partT = 0.3f; Sp(0, dir * 5 + U.Rf(-2, 2), -12, U.Rf(-1, 1), -3, 1.5f, 0.45f, Color.FromArgb(255, 232, 64, 84)); }
                     if (t >= dur) Go(St.Love, 1.2f);
@@ -478,6 +486,8 @@ namespace Clawdling
             if (cfg.NewYear) { add(13, 2); add(15, 1.5f); }
             if (floor) add(14, 3);
             if (codex) add(16, 4);
+            int hr = DateTime.Now.Hour;
+            if (hr >= 23 || hr < 6) { add(9, 10); add(23, 2); }
             add(17, 2.5f); add(18, codex ? 3 : 1); add(19, 2); add(20, cfg.NewYear ? 2.5f : 1.2f);
             if (!codex) add(21, 2.5f);
             Pet mate = leader ?? buddy;
@@ -512,6 +522,7 @@ namespace Clawdling
                     Face(leader ?? buddy); Go(St.Wave, 1.6f);
                     Say(codex ? U.Pick("Клод! Привет!", "Эй, Клод, смотри!", "Я тут, если что!") : U.Pick("Привет, Кодекс!", "Как дела, зелёный?", "Не скучаешь?"), 1.6f);
                     break;
+                case 23: Go(St.Yawn, 1.6f); Say(U.Pick("Поздно уже... спать пора", "Ты тоже не спишь?", "Ночь на дворе!"), 1.8f); break;
                 case 16: Go(St.Think, 2.4f); Say(U.Pick("Э-э-э...", "А что я делал?", "Бип-буп!", "Хе-хе", "Я забыл, зачем пришёл", "Где мой курсор?"), 1.8f); break;
             }
         }
@@ -613,28 +624,31 @@ namespace Clawdling
             vy += g * dt; if (vy > 2400 * k) vy = 2400 * k;
             float nx = px + vx * dt, ny = py + vy * dt;
             var vs = SystemInformation.VirtualScreen;
-            if (nx < vs.Left + 7 * u) { nx = vs.Left + 7 * u; vx = Math.Abs(vx) * 0.5f; }
-            if (nx > vs.Right - 7 * u) { nx = vs.Right - 7 * u; vx = -Math.Abs(vx) * 0.5f; }
-            if (ny - 14 * u < vs.Top) { ny = vs.Top + 14 * u; if (vy < 0) vy = -vy * 0.3f; }
+            float wallK = flung ? 0.9f : 0.5f;
+            if (nx < vs.Left + 7 * u) { nx = vs.Left + 7 * u; vx = Math.Abs(vx) * wallK; if (flung) squashT = 0.1f; }
+            if (nx > vs.Right - 7 * u) { nx = vs.Right - 7 * u; vx = -Math.Abs(vx) * wallK; if (flung) squashT = 0.1f; }
+            if (ny - 14 * u < vs.Top) { ny = vs.Top + 14 * u; if (vy < 0) vy = -vy * (flung ? 0.75f : 0.3f); }
             rot += (0 - rot) * Math.Min(1, 7 * dt);
             if (Math.Abs(rot) < 0.5f) rot = 0;
             if (Math.Abs(vx) > 20 * k) dir = Math.Sign(vx);
+            BumpMate(dt, nx, ny);
             if (vy > 0)
             {
                 float ly; IntPtr h; N.RECT r;
-                if (FindLanding(nx, py, ny, out ly, out h, out r)) { px = nx; py = ly; Land(h, r); return; }
+                if (FindLanding(nx, py, ny, out ly, out h, out r)) { px = nx; if (TryBounce(ly)) return; py = ly; Land(h, r); return; }
             }
             px = nx; py = ny;
         }
 
         void Land(IntPtr h, N.RECT r)
         {
-            float impact = vy; vy = 0; vx = 0; rot = 0; sink = 0;
+            float impact = vy; vy = 0; vx = 0; rot = 0; sink = 0; flung = false; bounces = 0;
             if (h == IntPtr.Zero) surf = 0; else { surf = 1; sHwnd = h; sRect = r; sVis = 0; sOcc = 0.5f; }
             RefreshMonitor();
             if (surf == 0 && cfg.NewYear && strip != null && strip.Visible && impact > 200 * k) SnowPuff((int)Math.Min(14, impact / (80 * k)));
             if (pendingReact > 0) { int pr = pendingReact; pendingReact = 0; React(pr); return; }
             if (!greeted) { greeted = true; Go(St.Wave, 1.8f); Say(codex ? (cfg.NewYear ? "Хо-хо! Я Кодекс!" : "Привет! Я Кодекс!") : (cfg.NewYear ? "Хо-хо-хо! Я Клод" : "Привет! Я Клод"), 2.6f); return; }
+            if (AfterBump()) return;
             if (dodged) { dodged = false; Go(St.Laugh, 1f); Say(U.Pick("Мимо!", "Не попал!", "Ха, промах!"), 1.5f); return; }
             if (impact > 1600 * k) { hitBySnow = false; Go(St.Hit, 1.3f); Say(U.Pick("Ух...", "Голова кружится...", "Ой-ой"), 1.6f); }
             else if (impact > 250 * k) Go(St.Land, 0.22f);
@@ -785,6 +799,7 @@ namespace Clawdling
                 rvy = U.Cl((b[2] - a[2]) / d, -2200 * k, 2200 * k);
             }
             StartFall(rvx, rvy);
+            flung = true; bounces = 0;
             if (U.Hyp(rvx, rvy) > 1300 * k) Say(U.Pick("Уиииии!", "Аааа!"), 1.2f);
         }
 
@@ -1273,6 +1288,8 @@ namespace Clawdling
                     legMode = 2;
                     if (vy < 0) { sy = 1.08f; sx = 0.94f; aL = aR = 5; emo = dodged ? Emo.Wink : Emo.Happy; }
                     else { aL = aR = 1; wig = U.Sin(C * 18) * 0.6f; emo = vy > 700 * k ? Emo.Surprised : Emo.Excited; mouth = vy > 700 * k ? 1 : 0; }
+                    if (squashT > 0) { sy = 0.7f; sx = 1.25f; emo = Emo.Closed; mouth = 3; }
+                    else if (flung && bounces > 0) { emo = Emo.Excited; mouth = 3; }
                     break;
                 case St.Land: { float q = 1 - Math.Min(1, T / 0.22f); sy = 1 - 0.25f * q; sx = 1 + 0.2f * q; } break;
                 case St.Drag:
@@ -1347,6 +1364,7 @@ namespace Clawdling
                     lean = ds * 0.6f + U.Sin(T * 4) * 0.15f;
                     if (ds > 0) { aR = 6; aL = 5; } else { aL = 6; aR = 5; }
                     emo = Emo.Happy; break;
+                case St.Tug: case St.Stare: case St.Rps: case St.Eat: PoseFun(T, ds, ref bob, ref sx, ref sy, ref lean, ref legMode, ref aL, ref aR, ref emo, ref mouth); break;
                 case St.Cover: cover = true; emo = Emo.Closed; mouth = 3; bob = -Math.Abs(U.Sin(T * 2.5f)) * 0.3f; break;
             }
 
@@ -1443,6 +1461,7 @@ namespace Clawdling
                     float sxp = bx + (float)Math.Cos(ang) * 5.5f, syp = headTop - 1.2f + (float)Math.Sin(ang) * 1.2f;
                     Bx(bYellow, sxp - 0.3f, syp - 0.9f, 0.6f, 1.8f); Bx(bYellow, sxp - 0.9f, syp - 0.3f, 1.8f, 0.6f);
                 }
+            DrawFunExtras(bx, bW, armY, headTop, ds);
             if (juggle)
                 for (int i = 0; i < 3; i++)
                 {
@@ -1652,6 +1671,7 @@ namespace Clawdling
             act.DropDownItems.Add("Слепить снежок", null, (s, e) => { if (OnGround && cfg.NewYear) StartSnowball(false); });
             act.DropDownItems.Add("Позвать сюда", null, (s, e) => Summon());
             act.DropDownItems.Add("Позвать Кодекса", null, (s, e) => SummonBuddy());
+            act.DropDownItems.Add("Угостить печенькой", null, (s, e) => GiveCookies());
             act.DropDownItems.Add(new ToolStripSeparator());
             act.DropDownItems.Add("Тест: «работа готова»", null, (s, e) => Notify("done", "Готово!", "Я закончил работу\n«demo-project»", null));
             act.DropDownItems.Add("Тест: «нужно внимание»", null, (s, e) => Notify("attn", "Claude ждёт тебя", "Нужно твоё подтверждение: Bash", null));
@@ -1734,7 +1754,7 @@ namespace Clawdling
 
         void ExitApp()
         {
-            try { N.UnregisterHotKey(Handle, 1); } catch { }
+            try { N.UnregisterHotKey(Handle, 1); N.UnregisterHotKey(Handle, 2); } catch { }
             bubble.Kill();
             if (buddy != null) buddy.bubble.Kill();
             tray.Visible = false; tray.Dispose();

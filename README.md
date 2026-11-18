@@ -21,7 +21,8 @@
 ![Эмоции](docs/emotions.png)
 
 **Можно трогать.**
-- Зажми и перетащи — он болтает лапками; отпусти с размаху — полетит, отскочит от краёв и приземлится
+- Зажми и перетащи — он болтает лапками; отпусти с размаху — полетит и запрыгает как мячик: отскакивает от пола, окон, краёв экрана и потолка
+- Кинь Клода в Кодекса (или наоборот) — собьёт его как кеглю, тот тоже отлетит, обидится и может погнаться за обидчиком
 - Клик — радуется, много кликов — злится, двойной клик — танцует
 - Правый клик — меню
 
@@ -60,10 +61,18 @@
 - **Чехарда**, **Дай пять**, **Танец**, **Обнимашки** с сердечками
 - **Тихий час**: зевают и засыпают рядом, Кодекс храпит
 - **Розыгрыш «БУ!»**: Кодекс подкрадывается к спящему Клоду и пугает, а потом убегает от него
+- **Перетягивание каната**: тянут верёвку с флажком посередине, проигравший падает носом вперёд
+- **Гляделки**: смотрят друг другу в глаза, кто первый моргнёт — проиграл (обычно Кодекс: «Это была муха!»)
+- **Камень-ножницы-бумага**: трясут кулачками и показывают знаки над головой, при ничьей переигрывают
 
 ![Игры](docs/games.png)
 
 **Когда скучно одному**, они жонглируют (Кодекс роняет мячики себе на голову), медитируют в воздухе, делают зарядку, чихают, кружатся, пытаясь поймать свой хвост, и машут друг другу, если оказались рядом.
+
+**Фишки.**
+- Меню → «Действия» → «Угостить печенькой»: оба едят печеньки, Кодекс иногда глотает свою целиком и косится на чужую
+- **Ctrl+Alt+P** — случайная игра прямо сейчас
+- После 23:00 они чаще зевают, засыпают и намекают, что пора спать
 
 ![Одиночные действия](docs/solo.png)
 
@@ -103,7 +112,8 @@ Clawdling.exe ask "текст"                                 — спроси�
 Clawdling.exe hook                                        — режим хука Claude Code (JSON на stdin)
 Clawdling.exe play <игра>                                 — Клод и Кодекс начинают игру:
                                                             tag, fight, snow, race, seek, leap, jump,
-                                                            copy, five, hug, dance, nap, prank
+                                                            copy, five, hug, dance, nap, prank,
+                                                            tug, stare, rps
 Clawdling.exe codex '<json>'                              — уведомление от OpenAI Codex CLI (его показывает Кодекс)
 ```
 
@@ -127,7 +137,7 @@ build.cmd
 
 ## English
 
-Clawdling is a lightweight (~120 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, races, hide-and-seek in the taskbar, high jump, copycat, leapfrog, high fives, hugs, dancing, naps and a "boo!" prank; on their own they juggle, meditate, stretch, sneeze and spin; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
+Clawdling is a lightweight (~120 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, races, hide-and-seek in the taskbar, high jump, copycat, tug of war, staring contest, rock-paper-scissors, leapfrog, high fives, hugs, dancing, naps and a "boo!" prank (Ctrl+Alt+P starts a random one); thrown pets bounce like rubber balls and knock each other over; they also eat cookies; on their own they juggle, meditate, stretch, sneeze and spin; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
 
 ---
 
