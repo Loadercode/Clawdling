@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck }
+    enum St { Idle, Walk, Sit, Sleep, Look, Wave, Dance, Prep, Jump, Fall, Land, Drag, Climb, Dive, Hidden, Peek, PopOut, Celebrate, Notify, Ask, Hit, Shake, Scoop, Roll, WindUp, Throw, Yawn, Laugh, Love, Think, Shiver, Happy, Sad, Angry, Trip, Brawl, HighFive, Duck, Juggle, Spin, Stretch, Sneeze, Zen, Hug, Cover }
     enum Emo { Normal, Happy, Closed, Sleepy, Surprised, Angry, Sad, Love, Dizzy, Wink, Excited, Focus, Pleading, Laugh }
 
     class Part { public int k; public float x, y, vx, vy, life, max, size; public Color c; }
@@ -140,14 +140,14 @@ namespace Clawdling
             if (timer.Interval != want) timer.Interval = want;
         }
 
-        bool Busy { get { return balls.Count > 0 || splats.Count > 0 || dragging || st == St.Fall || st == St.Jump || held != null || st == St.Brawl; } }
+        bool Busy { get { return balls.Count > 0 || splats.Count > 0 || dragging || st == St.Fall || st == St.Jump || held != null || st == St.Brawl || st == St.Spin; } }
 
         void Frame(float dt)
         {
             clock += dt;
             fsT -= dt;
             if (fsT <= 0) { fsT = 0.5f; bool fs = DetectFullscreen(); if (fs != fsHidden) { fsHidden = fs; ApplyVisibility(); } }
-            if (fsHidden || cfg.Hidden) return;
+            if (bubble == null || fsHidden || cfg.Hidden) return;
 
             var cp = Cursor.Position; curX = cp.X; curY = cp.Y;
             monT -= dt; if (monT <= 0) { monT = 0.5f; RefreshMonitor(); }
@@ -423,6 +423,39 @@ namespace Clawdling
                     if (t > 0.32f && t - dt <= 0.32f) for (int i = 0; i < 8; i++) Sp(3, dir * 8 + U.Rf(-1, 1), -14, U.Rf(-5, 5), U.Rf(-10, -4), 1.1f, U.Rf(0.6f, 0.9f), confetti[U.R.Next(confetti.Length)]);
                     if (t >= dur) Go(St.Happy, 0.9f);
                     break;
+                case St.Juggle:
+                    if (t >= dur)
+                    {
+                        if (codex && U.Ch(0.5)) { hitBySnow = false; hitFrom = null; Go(St.Hit, 1.2f); Say(U.Pick("Ай! Прямо в макушку", "Ой-ой-ой...", "Это всё гравитация!"), 1.6f); }
+                        else { Go(St.Happy, 0.9f); if (U.Ch(0.4)) Say("Та-да!", 1.2f); }
+                    }
+                    break;
+                case St.Spin:
+                    legPhase += dt * 12; dir = U.Sin(t * 16) > 0 ? 1 : -1;
+                    if (partT <= 0) { partT = 0.1f; Sp(6, U.Rf(-5, 5), -0.5f, U.Rf(-3, 3), -0.6f, 0.6f, U.Rf(1.5f, 2.5f), Color.FromArgb(255, 205, 200, 195)); }
+                    if (t >= dur)
+                    {
+                        hitBySnow = false; hitFrom = null; Go(St.Hit, 1.1f);
+                        if (U.Ch(0.5)) Say(codex ? U.Pick("Всё кружится...", "Где я?", "Хвост не нашёл...") : U.Pick("Ух, голова кружится!", "Вжух!"), 1.4f);
+                    }
+                    break;
+                case St.Sneeze:
+                    if (t > 0.85f && t - dt <= 0.85f)
+                    {
+                        for (int i = 0; i < 7; i++) Sp(6, dir * 7, -6, dir * U.Rf(5, 11), U.Rf(-3, 1), 0.7f, U.Rf(1.2f, 2.4f), Color.FromArgb(255, 235, 240, 248));
+                        px -= dir * (codex ? 4 : 2) * u;
+                        Say(codex ? U.Pick("АПЧХИ!!!", "Апчхи! Ой, это был я?") : U.Pick("Апчхи!", "Апч-хи!"), 1.3f);
+                    }
+                    if (t >= dur) GoIdle();
+                    break;
+                case St.Zen:
+                    if (partT <= 0) { partT = 0.4f; Sp(7, U.Rf(-8, 8), U.Rf(-13, -3), 0, -1.6f, 1.3f, 0.45f, Color.FromArgb(255, 176, 140, 255)); }
+                    if (t >= dur) GoIdle();
+                    break;
+                case St.Hug:
+                    if (partT <= 0) { partT = 0.3f; Sp(0, dir * 5 + U.Rf(-2, 2), -12, U.Rf(-1, 1), -3, 1.5f, 0.45f, Color.FromArgb(255, 232, 64, 84)); }
+                    if (t >= dur) Go(St.Love, 1.2f);
+                    break;
                 default:
                     if (t >= dur) GoIdle();
                     break;
@@ -445,6 +478,10 @@ namespace Clawdling
             if (cfg.NewYear) { add(13, 2); add(15, 1.5f); }
             if (floor) add(14, 3);
             if (codex) add(16, 4);
+            add(17, 2.5f); add(18, codex ? 3 : 1); add(19, 2); add(20, cfg.NewYear ? 2.5f : 1.2f);
+            if (!codex) add(21, 2.5f);
+            Pet mate = leader ?? buddy;
+            if (mate != null && mate.Visible && !mate.fsHidden && Math.Abs(mate.px - px) < 320 * k && Math.Abs(mate.py - py) < 60 * k) add(22, 4);
             float sum = 0; foreach (var o in opts) sum += o.Value;
             float r = U.Rf(0, sum); int pick = 0;
             foreach (var o in opts) { r -= o.Value; if (r <= 0) { pick = o.Key; break; } }
@@ -466,6 +503,15 @@ namespace Clawdling
                 case 13: Go(St.Shiver, 2.2f); if (U.Ch(0.4)) Say(U.Pick("Брр, холодно!", "Зима близко..."), 1.6f); break;
                 case 14: StartWalk(true); break;
                 case 15: Go(St.Happy, 1.2f); Say(U.Pick("Хо-хо-хо!", "С наступающим!", "Снежок?"), 1.8f); break;
+                case 17: Go(St.Juggle, U.Rf(3, 4.5f)); if (U.Ch(0.4)) Say(codex ? U.Pick("Смотри, как я умею!", "Жонглирую! Почти...") : U.Pick("Оп-оп-оп!", "Цирк приехал!"), 1.6f); break;
+                case 18: Go(St.Spin, 1.5f); if (codex && U.Ch(0.6)) Say(U.Pick("Где мой хвост?!", "Вжу-у-ух!"), 1.4f); break;
+                case 19: Go(St.Stretch, 3.2f); if (U.Ch(0.5)) Say(U.Pick("Зарядка!", "Раз-два, раз-два!", "Разминочка"), 1.5f); break;
+                case 20: Go(St.Sneeze, 1.5f); break;
+                case 21: Go(St.Zen, U.Rf(5, 9)); if (U.Ch(0.5)) Say(U.Pick("Ом-м-м...", "Дзен...", "Я спокоен"), 1.6f); break;
+                case 22:
+                    Face(leader ?? buddy); Go(St.Wave, 1.6f);
+                    Say(codex ? U.Pick("Клод! Привет!", "Эй, Клод, смотри!", "Я тут, если что!") : U.Pick("Привет, Кодекс!", "Как дела, зелёный?", "Не скучаешь?"), 1.6f);
+                    break;
                 case 16: Go(St.Think, 2.4f); Say(U.Pick("Э-э-э...", "А что я делал?", "Бип-буп!", "Хе-хе", "Я забыл, зачем пришёл", "Где мой курсор?"), 1.8f); break;
             }
         }
@@ -773,8 +819,7 @@ namespace Clawdling
             }
             if (kind == "play")
             {
-                string[] ids = { "", "tag", "fight", "snow", "leap", "five", "dance" };
-                int gi = Array.IndexOf(ids, (title ?? "").ToLowerInvariant());
+                int gi = Array.IndexOf(playIds, (title ?? "").ToLowerInvariant());
                 if (buddy == null) SetBuddy(true);
                 PlayNow(gi > 0 ? (Game)gi : PickGame());
                 return;
@@ -834,7 +879,7 @@ namespace Clawdling
 
         public void Say(string text, float life)
         {
-            if (fsHidden || cfg.Hidden) return;
+            if (bubble == null || fsHidden || cfg.Hidden) return;
             if (!bubble.Active || (bubble.Kind == 0 && !bubble.IsClosing)) bubble.Open(0, "", text, life, null);
             else if (bubble.IsClosing) pendingSpeech = text;
         }
@@ -1201,7 +1246,7 @@ namespace Clawdling
             float bob = 0, sx = 1, sy = 1, lean = 0, sit = 0, wig = 0, armYo = 0;
             int legMode = 0, aL = 0, aR = 0;
             Emo emo = Emo.Normal; int mouth = 0; // 1 O, 2 laugh, 3 small, 4 yawn
-            int badge = 0; bool stars = false, dots = false;
+            int badge = 0; bool stars = false, dots = false, juggle = false, cover = false;
             float T = t, C = clock;
             int ds = dir >= 0 ? 1 : -1;
 
@@ -1283,6 +1328,26 @@ namespace Clawdling
                     if (ds > 0) aR = 5; else aL = 5;
                     emo = T < 0.32f ? Emo.Excited : Emo.Happy; mouth = 3; break;
                 case St.Duck: sit = 1; sy = 0.72f; sx = 1.1f; aL = aR = 4; emo = Emo.Closed; mouth = 3; break;
+                case St.Juggle:
+                    if (U.Sin(C * 9) > 0) { aL = 5; aR = 1; } else { aL = 1; aR = 5; }
+                    emo = codex ? Emo.Excited : Emo.Focus; juggle = true; bob = -Math.Abs(U.Sin(C * 9)) * 0.3f; break;
+                case St.Spin:
+                    sx = 0.72f + 0.28f * Math.Abs(U.Cos(T * 16)); legMode = 1; aL = aR = 1;
+                    emo = T > 0.8f ? Emo.Dizzy : Emo.Excited; bob = -Math.Abs(U.Sin(T * 8)) * 0.5f; break;
+                case St.Stretch:
+                    if ((int)(T * 1.5f) % 2 == 0) { aL = aR = 1; sy = 1.1f; sx = 0.95f; emo = Emo.Happy; }
+                    else { sy = 0.82f; sx = 1.1f; aL = aR = 6; emo = Emo.Focus; }
+                    break;
+                case St.Sneeze:
+                    if (T < 0.85f) { float q = T / 0.85f; lean = -ds * 0.7f * q; sy = 1 + 0.08f * q; emo = Emo.Pleading; mouth = 1; }
+                    else { float q = Math.Max(0, 1 - (T - 0.85f) / 0.4f); lean = ds * q; sy = 1 - 0.12f * q; emo = Emo.Closed; mouth = 3; aL = aR = 4; }
+                    break;
+                case St.Zen: sit = 1; bob = -2.2f - U.Sin(C * 2) * 0.6f; emo = Emo.Closed; aL = aR = 2; break;
+                case St.Hug:
+                    lean = ds * 0.6f + U.Sin(T * 4) * 0.15f;
+                    if (ds > 0) { aR = 6; aL = 5; } else { aL = 6; aR = 5; }
+                    emo = Emo.Happy; break;
+                case St.Cover: cover = true; emo = Emo.Closed; mouth = 3; bob = -Math.Abs(U.Sin(T * 2.5f)) * 0.3f; break;
             }
 
             float legH = 2f * (1 - sit);
@@ -1322,6 +1387,13 @@ namespace Clawdling
 
             // face
             DrawFace(emo, mouth, bx, bTop, sx, sy);
+            if (cover)
+                for (int s = -1; s <= 1; s += 2)
+                {
+                    float hx = bx + s * 2.5f * sx, hy = bTop + 2.2f * sy;
+                    Bx(bDark, hx - 1.3f, hy, 2.6f, 2.0f);
+                    Bx(bLight, hx - 1.3f, hy, 2.6f, 0.45f);
+                }
 
             // snow stuck on the body
             if (snowOnBody > 0.02f)
@@ -1371,6 +1443,14 @@ namespace Clawdling
                     float sxp = bx + (float)Math.Cos(ang) * 5.5f, syp = headTop - 1.2f + (float)Math.Sin(ang) * 1.2f;
                     Bx(bYellow, sxp - 0.3f, syp - 0.9f, 0.6f, 1.8f); Bx(bYellow, sxp - 0.9f, syp - 0.3f, 1.8f, 0.6f);
                 }
+            if (juggle)
+                for (int i = 0; i < 3; i++)
+                {
+                    double ang = C * 4.5 + i * 2.094;
+                    float jx = bx + (float)Math.Cos(ang) * 4.2f, jy = headTop - 3.8f + (float)Math.Sin(ang) * 3f;
+                    bTmp.Color = cfg.NewYear ? Color.White : jugC[i];
+                    Bx(bTmp, jx - 0.8f, jy - 0.8f, 1.6f, 1.6f);
+                }
             if (dots)
             {
                 int n = (int)(T * 2.5f) % 4;
@@ -1378,6 +1458,8 @@ namespace Clawdling
                 for (int i = 0; i < n; i++) Bx(bTmp, bx + 6.5f + i * 1.4f, headTop - 1.5f - i * 1f, 0.9f, 0.9f);
             }
         }
+
+        static readonly Color[] jugC = { Color.FromArgb(255, 255, 196, 64), Color.FromArgb(255, 90, 160, 240), Color.FromArgb(255, 232, 64, 84) };
 
         void ArmRect(Brush b, int s, float xEdge, float off, float y, float w, float h)
         {
@@ -1563,6 +1645,9 @@ namespace Clawdling
             var act = new ToolStripMenuItem("Действия");
             act.DropDownItems.Add("Помахать", null, (s, e) => { if (OnGround) Go(St.Wave, 1.8f); });
             act.DropDownItems.Add("Станцевать", null, (s, e) => { if (OnGround) Go(St.Dance, 3.5f); });
+            act.DropDownItems.Add("Пожонглировать", null, (s, e) => { if (OnGround) Go(St.Juggle, 4f); });
+            act.DropDownItems.Add("Сделать зарядку", null, (s, e) => { if (OnGround) Go(St.Stretch, 3.2f); });
+            act.DropDownItems.Add("Помедитировать", null, (s, e) => { if (OnGround) Go(St.Zen, 8f); });
             act.DropDownItems.Add("Уложить спать", null, (s, e) => { if (OnGround) Go(St.Sleep, 40); });
             act.DropDownItems.Add("Слепить снежок", null, (s, e) => { if (OnGround && cfg.NewYear) StartSnowball(false); });
             act.DropDownItems.Add("Позвать сюда", null, (s, e) => Summon());
@@ -1577,13 +1662,15 @@ namespace Clawdling
             miCodex = new ToolStripMenuItem("Показывать Кодекса", null, (s, e) => { cfg.Codex = !cfg.Codex; cfg.Save(); SetBuddy(cfg.Codex); });
             duo.DropDownItems.Add(miCodex);
             duo.DropDownItems.Add(new ToolStripSeparator());
-            miGames = new ToolStripMenuItem[6];
-            for (int i = 1; i <= 6; i++)
+            var play = new ToolStripMenuItem("Играть");
+            miGames = new ToolStripMenuItem[menuGames.Length];
+            for (int i = 0; i < menuGames.Length; i++)
             {
-                var g = (Game)i;
-                miGames[i - 1] = new ToolStripMenuItem("Играть: " + gameNames[i], null, (s, e) => PlayNow(g));
-                duo.DropDownItems.Add(miGames[i - 1]);
+                var g = menuGames[i];
+                miGames[i] = new ToolStripMenuItem(gameNames[(int)g], null, (s, e) => PlayNow(g));
+                play.DropDownItems.Add(miGames[i]);
             }
+            duo.DropDownItems.Add(play);
             menu.Items.Add(duo);
 
             var hooks = new ToolStripMenuItem("Подключение к Claude Code");
@@ -1606,8 +1693,8 @@ namespace Clawdling
             miAuto.Checked = Cfg.Autostart;
             miHide.Text = cfg.Hidden ? "Показать питомцев" : "Спрятать питомцев";
             miCodex.Checked = buddy != null;
-            foreach (var m in miGames) m.Enabled = buddy != null;
-            miGames[2].Enabled = buddy != null && cfg.NewYear && cfg.Snow;
+            for (int i = 0; i < miGames.Length; i++)
+                miGames[i].Enabled = buddy != null && (menuGames[i] != Game.Snow || (cfg.NewYear && cfg.Snow)) && (menuGames[i] != Game.Seek || SeekAllowed);
         }
 
         void BuildTray()
@@ -1622,7 +1709,7 @@ namespace Clawdling
 
         void Summon()
         {
-            if (fsHidden || cfg.Hidden) return;
+            if (bubble == null || fsHidden || cfg.Hidden) return;
             var scr = Screen.FromPoint(Cursor.Position);
             wa = scr.WorkingArea; sb = scr.Bounds;
             px = U.Cl(Cursor.Position.X, wa.Left + 8 * u, wa.Right - 8 * u); py = wa.Top + 16 * u; rot = 0;

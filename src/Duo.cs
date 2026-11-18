@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace Clawdling
 {
-    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank }
+    enum Game { None, Tag, Fight, Snow, Leap, High5, Dance, Prank, Race, Hug, Seek, Mimic, Nap, HighJump }
 
     partial class Pet
     {
@@ -103,6 +103,7 @@ namespace Clawdling
                 {
                     case St.Idle: case St.Walk: case St.Sit: case St.Look: case St.Think: case St.Wave: case St.Yawn:
                     case St.Dance: case St.Love: case St.Happy: case St.Laugh: case St.Shiver: case St.Land: case St.Sad:
+                    case St.Juggle: case St.Stretch: case St.Zen:
                         return true;
                 }
                 return false;
@@ -113,7 +114,7 @@ namespace Clawdling
         {
             get
             {
-                if (!Visible || fsHidden || cfg.Hidden || dragging || HiddenState || rot != 0) return false;
+                if (!Visible || fsHidden || cfg.Hidden || dragging || (HiddenState && !hideOk) || rot != 0) return false;
                 if (st == St.Notify || st == St.Ask || bubble.IsNotice) return false;
                 return surf == 0 || st == St.Jump || st == St.Fall || st == St.Prep;
             }
@@ -155,9 +156,13 @@ namespace Clawdling
         internal Game game;
         Game nextGame; Pet nextA;
         Pet gA, gB; int gPh, gN, gGoal; float gT, gPhT, gCd, gX, gMid, gS;
-        float gWait; int gHits;
+        float gWait, gBest; int gHits, gMove; Pet gWin; bool hideOk;
 
-        static readonly string[] gameNames = { "", "Догонялки", "Драка", "Снежная битва", "Чехарда", "Дай пять", "Танец", "" };
+        static readonly string[] gameNames = { "", "Догонялки", "Драка", "Снежная битва", "Чехарда", "Дай пять", "Танец", "Розыгрыш «БУ!»",
+                                               "Гонки", "Обнимашки", "Прятки", "Повторялка", "Тихий час", "Кто выше прыгнет" };
+        static readonly string[] playIds = { "", "tag", "fight", "snow", "leap", "five", "dance", "prank", "race", "hug", "seek", "copy", "nap", "jump" };
+        static readonly Game[] menuGames = { Game.Tag, Game.Fight, Game.Snow, Game.Race, Game.Seek, Game.Leap, Game.HighJump,
+                                             Game.Mimic, Game.High5, Game.Hug, Game.Dance, Game.Nap, Game.Prank };
 
         void UpdateDuo(float dt)
         {
@@ -178,23 +183,30 @@ namespace Clawdling
                 return;
             }
             gT += dt; gPhT += dt;
-            if (!gA.OkInGame || !gB.OkInGame || gA.wa != gB.wa || gT > 45) { EndGame(); return; }
+            if (!gA.OkInGame || !gB.OkInGame || gA.wa != gB.wa || gT > (game == Game.Seek ? 75 : 45)) { EndGame(); return; }
             switch (game)
             {
                 case Game.Tag: TickTag(dt); break;
                 case Game.Fight: TickFight(dt); break;
                 case Game.Snow: TickSnow(dt); break;
                 case Game.Leap: TickLeap(dt); break;
-                case Game.High5: case Game.Dance: TickMeet(dt); break;
+                case Game.High5: case Game.Dance: case Game.Hug: TickMeet(dt); break;
                 case Game.Prank: TickPrank(dt); break;
+                case Game.Race: TickRace(dt); break;
+                case Game.Seek: TickSeek(dt); break;
+                case Game.Mimic: TickMimic(dt); break;
+                case Game.Nap: TickNap(dt); break;
+                case Game.HighJump: TickJump(dt); break;
             }
         }
 
         bool SnowAllowed { get { return cfg.NewYear && cfg.Snow && strip != null && strip.Visible; } }
+        bool SeekAllowed { get { return wa.Bottom < sb.Bottom; } } // taskbar at the bottom to hide in
 
         Game PickGame()
         {
-            float[] w = { 0, 30, 18, SnowAllowed ? 34 : 0, 14, 12, 10 };
+            //          tag fight snow                  leap hi5 dance prank race hug  seek                  copy nap jump
+            float[] w = { 0, 26, 16, SnowAllowed ? 30 : 0, 12, 10, 8, 0, 14, 9, SeekAllowed ? 13 : 0, 12, 5, 11 };
             float sum = 0; foreach (var x in w) sum += x;
             float r = U.Rf(0, sum);
             for (int i = 1; i < w.Length; i++) { r -= w[i]; if (r <= 0) return (Game)i; }
@@ -206,6 +218,7 @@ namespace Clawdling
             if (buddy == null) return;
             if (game != Game.None) EndGame();
             if (g == Game.Snow && !SnowAllowed) g = Game.Tag;
+            if (g == Game.Seek && !SeekAllowed) g = Game.Race;
             game = g; gA = first; gB = second; gT = 0; gPh = 0; gPhT = 0; gN = 0; gWait = 0;
             gA.inGame = gB.inGame = true;
             gA.gThrows = gB.gThrows = 0; gA.gHits = gB.gHits = 0;
@@ -233,6 +246,29 @@ namespace Clawdling
                 case Game.Dance:
                     gA.Say(U.Pick("Потанцуем?", "Музыка!", "Танцуем!"), 1.4f);
                     break;
+                case Game.Race:
+                    gA.Say(gA.codex ? U.Pick("Наперегонки! Я быстрый!", "Спорим, обгоню?") : U.Pick("Наперегонки!", "Кто быстрее?", "Гонка!"), 1.6f);
+                    break;
+                case Game.Hug:
+                    gA.Say(gA.codex ? U.Pick("Обнимашки!", "Клод, иди сюда!") : U.Pick("Обнимашки?", "Иди обниму!"), 1.5f);
+                    break;
+                case Game.Seek:
+                    gA.Say(U.Pick("Прятки! Я вожу!", "Считаю до десяти!", "Прячься!"), 1.6f);
+                    break;
+                case Game.Mimic:
+                    gGoal = U.R.Next(3, 5);
+                    break;
+                case Game.Nap:
+                    gA.Say(U.Pick("Тихий час...", "Что-то я устал...", "Может, поспим?"), 1.6f);
+                    break;
+                case Game.HighJump:
+                    gGoal = 4; gA.gBest = gB.gBest = 0;
+                    gA.Say(U.Pick("Кто выше прыгнет?", "Прыжки в высоту!"), 1.6f);
+                    break;
+                case Game.Prank:
+                    if (gA.codex) { var tmp = gA; gA = gB; gB = tmp; }
+                    if (gA.st != St.Sleep) gA.Go(St.Sleep, 40);
+                    break;
             }
         }
 
@@ -242,8 +278,10 @@ namespace Clawdling
             foreach (var p in new[] { gA, gB })
             {
                 if (p == null) continue;
-                p.inGame = false;
-                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle)) { p.GoIdle(); }
+                p.inGame = false; p.hideOk = false;
+                if (p.st == St.Hidden) { p.t = 0; p.dur = 0.8f; }
+                else if (p.st == St.Peek) p.dur = p.t + 0.3f;
+                if (p.OnGround && (p.st == St.Walk || p.st == St.Brawl || p.st == St.Duck || p.st == St.Idle || p.st == St.Cover)) { p.GoIdle(); }
             }
             game = Game.None;
             gCd = nextGame != Game.None ? 3.5f : U.Rf(16, 40);
@@ -296,7 +334,7 @@ namespace Clawdling
                             if (U.Ch(0.6)) B.Say(B.codex ? U.Pick("Ой-ой...", "Мама!", "Сам такой!") : U.Pick("Ну давай!", "Сам напросился!"), 1.2f);
                             gPh = 1; gPhT = 0;
                         }
-                        else if (gPhT > 9) EndGame();
+                        else if (gPhT > 16) EndGame();
                         break;
                     }
                 case 1: // face-off
@@ -421,7 +459,7 @@ namespace Clawdling
         void TickMeet(float dt)
         {
             Pet A = gA, B = gB;
-            float gapWant = game == Game.High5 ? 12 * u : 16 * u;
+            float gapWant = game == Game.High5 ? 12 * u : game == Game.Hug ? 9 * u : 16 * u;
             float spot = B.px - gS * gapWant;
             if (spot < A.Lo || spot > A.Hi) spot = B.px + gS * gapWant;
             if (B.Ready && B.st == St.Walk) { B.GoIdle(); }
@@ -435,6 +473,11 @@ namespace Clawdling
                     A.Go(St.HighFive, 1f); B.Go(St.HighFive, 1f);
                     B.Say(B.codex ? U.Pick("Йе-е!", "Пять!", "Ой, промахнулся! Шучу!") : U.Pick("Йе!", "Есть пять!"), 1.3f);
                 }
+                else if (game == Game.Hug)
+                {
+                    A.Go(St.Hug, 2.6f); B.Go(St.Hug, 2.6f);
+                    B.Say(B.codex ? U.Pick("Ты мой лучший друг!", "Не отпущу!", "Тёплый!") : U.Pick("Я тоже рад!", "Обнимашки!", "Ты лучший, Кодекс"), 1.6f);
+                }
                 else
                 {
                     A.Go(St.Dance, 4.2f); B.Go(St.Dance, 4.2f);
@@ -442,7 +485,7 @@ namespace Clawdling
                 }
                 EndGame();
             }
-            else if (gPhT > 9) EndGame();
+            else if (gPhT > 16) EndGame();
         }
 
         // ---------- Codex sneaks up on sleeping Claude ----------
@@ -454,6 +497,7 @@ namespace Clawdling
                 case 0:
                     {
                         if (A.st != St.Sleep) { EndGame(); return; }
+                        if (gT < 1.5f) break;
                         float side = Math.Sign(B.px - A.px); if (side == 0) side = 1;
                         float spot = A.px + side * 11 * u;
                         if (spot < B.Lo || spot > B.Hi) spot = A.px - side * 11 * u;
@@ -483,6 +527,261 @@ namespace Clawdling
                     }
                     break;
             }
+        }
+
+        // ---------- shared: walk up to the mate ----------
+        bool GetTogether(float gap)
+        {
+            Pet A = gA, B = gB;
+            float spot = B.px - gS * gap;
+            if (spot < A.Lo || spot > A.Hi) spot = B.px + gS * gap;
+            if (B.Ready && B.st == St.Walk) B.GoIdle();
+            if (B.Ready) B.Face(A);
+            if (A.Ready) A.RunTo(spot, 100 * k);
+            if (A.Ready && A.st == St.Idle && Math.Abs(A.px - spot) < 3 && B.Ready && B.st != St.Walk) { A.Face(B); B.Face(A); return true; }
+            if (gPhT > 16) EndGame();
+            return false;
+        }
+
+        void DoMove(int m)
+        {
+            switch (m)
+            {
+                case 0: Go(St.Wave, 1.4f); break;
+                case 1: Go(St.Dance, 2.2f); break;
+                case 2: leaping = false; Go(St.Prep, 0.18f); break;
+                case 3: Go(St.Love, 1.6f); break;
+                case 4: Go(St.Celebrate, 1.4f); break;
+                case 5: Go(St.Spin, 1.2f); break;
+                default: Go(St.Stretch, 2f); break;
+            }
+        }
+
+        // ---------- race ----------
+        void TickRace(float dt)
+        {
+            Pet A = gA, B = gB;
+            switch (gPh)
+            {
+                case 0:
+                    if (gN == 0)
+                    {
+                        gN = 1;
+                        float c = (A.px + B.px) / 2, d = (A.Hi - c) > (c - A.Lo) ? 1 : -1;
+                        A.gWait = U.Cl(c - d * 8 * u, A.Lo, A.Hi); B.gWait = U.Cl(A.gWait + d * 16 * u, B.Lo, B.Hi);
+                        float room = d > 0 ? B.Hi - B.gWait : B.gWait - B.Lo;
+                        float L = Math.Min(480 * k, room - 4 * u);
+                        if (L < 150 * k) { EndGame(); return; }
+                        gS = d; gX = A.gWait + d * L; gMid = B.gWait + d * L;
+                    }
+                    if (A.Ready) A.RunTo(A.gWait, 110 * k);
+                    if (B.Ready) B.RunTo(B.gWait, 110 * k);
+                    if (A.Ready && B.Ready && A.st == St.Idle && B.st == St.Idle && Math.Abs(A.px - A.gWait) < 4 && Math.Abs(B.px - B.gWait) < 4)
+                    {
+                        A.dir = B.dir = (int)gS;
+                        A.Say(U.Pick("На старт... внимание...", "Три... два... один..."), 1.6f);
+                        if (B.codex && U.Ch(0.4)) B.SayLater(0.8f, "Я готов! Наверное");
+                        gPh = 1; gPhT = 0;
+                    }
+                    else if (gPhT > 12) EndGame();
+                    break;
+                case 1:
+                    if (gPhT > 1.7f)
+                    {
+                        A.Say("Марш!", 1f);
+                        A.gWait = U.Rf(118, 140) * k; B.gWait = U.Rf(118, 140) * k;
+                        foreach (var p in new[] { A, B }) if (p.codex) p.tripCd = U.Rf(0, 1.5f);
+                        gPh = 2; gPhT = 0; gWin = null;
+                    }
+                    break;
+                case 2:
+                    foreach (var p in new[] { A, B })
+                    {
+                        if (p.gHits > 0 || !p.Ready) continue;
+                        float f = p == A ? gX : gMid;
+                        if (Math.Abs(p.px - f) < 4)
+                        {
+                            p.gHits = 1;
+                            if (gWin == null)
+                            {
+                                gWin = p; p.Go(St.Celebrate, 1.6f);
+                                p.Say(p.codex ? U.Pick("Я первый?! Я первый!", "Скорость света!", "Кодекс — чемпион!") : U.Pick("Первый!", "Я быстрее!", "Финиш!"), 1.6f);
+                            }
+                            else
+                            {
+                                p.Go(p.codex ? St.Sad : St.Laugh, 1.3f);
+                                p.SayLater(1.8f, p.codex ? U.Pick("Я споткнулся, не считается!", "Реванш!") : U.Pick("Тебе просто повезло!", "В следующий раз!"));
+                            }
+                        }
+                        else p.RunTo(f, p.gWait);
+                    }
+                    if ((A.gHits > 0 && B.gHits > 0) || gPhT > 20) EndGame();
+                    break;
+            }
+        }
+
+        // ---------- hide and seek ----------
+        void TickSeek(float dt)
+        {
+            Pet A = gA, B = gB; // A seeks, B hides in the taskbar
+            switch (gPh)
+            {
+                case 0:
+                    if (gN == 0)
+                    {
+                        gN = 1;
+                        float side = (A.Hi - A.px) > (A.px - A.Lo) ? 1 : -1;
+                        gX = U.Cl(A.px + side * U.Rf(220, 480) * k, B.Lo, B.Hi);
+                        A.Face(B); A.Go(St.Cover, 99);
+                        B.hideOk = true;
+                    }
+                    if (B.Ready) B.RunTo(gX, 125 * k);
+                    if (B.Ready && ((B.st == St.Idle && Math.Abs(B.px - gX) < 4) || gPhT > 10))
+                    {
+                        B.Go(St.Dive, 0.8f); gPh = 1; gPhT = 0;
+                        if (U.Ch(0.5)) B.Say(B.codex ? "Хи-хи!" : "Тсс...", 1f);
+                    }
+                    break;
+                case 1:
+                    if (B.st == St.Hidden) B.dur = 999;
+                    if (B.st == St.Hidden && gPhT > 1.2f)
+                    {
+                        A.GoIdle(); A.dur = 0.5f;
+                        A.Say(A.codex ? U.Pick("Иду искать! А кого?", "Готов или нет — иду!") : U.Pick("Кто не спрятался — я не виноват!", "Иду искать!"), 1.6f);
+                        gN = 0; gGoal = U.R.Next(1, 3); PickDecoy(); gPh = 2; gPhT = 0;
+                    }
+                    else if (gPhT > 5) EndGame();
+                    break;
+                case 2:
+                    {
+                        if (A.Ready && gPhT > 0.5f && Math.Abs(A.px - B.px) < 15 * u)
+                        {
+                            A.Face(B); B.sinkStart = B.sink; B.Go(St.PopOut, 0.18f); B.hideOk = false;
+                            B.Say(B.codex ? U.Pick("Ой! Как ты меня нашёл?!", "Нечестно, я хорошо спрятался!") : U.Pick("Ку-ку!", "Нашёл всё-таки!"), 1.6f);
+                            A.Go(St.Celebrate, 1.4f); A.Say(U.Pick("Нашёл!", "Попался!", "Вот ты где!"), 1.4f);
+                            EndGame(); return;
+                        }
+                        if (gPhT > 40) { EndGame(); return; }
+                        if (!A.Ready) break;
+                        float target = gN < gGoal ? gMid : B.px;
+                        if (Math.Abs(A.px - target) < 4 && A.st == St.Idle)
+                        {
+                            gN++;
+                            A.Go(U.Ch(0.5) ? St.Look : St.Think, 1.4f);
+                            if (U.Ch(0.7)) A.Say(U.Pick("Хм... не тут", "Где же он?", "Куда он делся?", "Тут пусто"), 1.4f);
+                            if (B.codex && B.st == St.Hidden && U.Ch(0.5)) B.Go(St.Peek, 99);
+                            PickDecoy();
+                        }
+                        else A.RunTo(target, 75 * k);
+                        break;
+                    }
+            }
+        }
+
+        void PickDecoy()
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                gMid = U.Rf(gA.Lo, gA.Hi);
+                bool wrongSide = Math.Sign(gMid - gA.px) != Math.Sign(gB.px - gA.px);
+                if (Math.Abs(gMid - gB.px) > 90 * k && Math.Abs(gMid - gA.px) > 70 * k && (gN > 0 || wrongSide || i > 8)) return;
+            }
+            gMid = gA.px;
+        }
+
+        // ---------- copy me ----------
+        void TickMimic(float dt)
+        {
+            Pet A = gA, B = gB;
+            switch (gPh)
+            {
+                case 0:
+                    if (!GetTogether(18 * u)) return;
+                    A.Say(A.codex ? U.Pick("Повторяй за мной! Если сможешь", "Делай как я!") : U.Pick("Повторяй за мной!", "Делай как я!"), 1.6f);
+                    gPh = 1; gPhT = 0; break;
+                case 1:
+                    if (gPhT > 1.2f && A.Ready && A.st == St.Idle && B.Ready && B.st == St.Idle)
+                    { gMove = U.R.Next(7); A.Face(B); A.DoMove(gMove); gPh = 2; gPhT = 0; }
+                    break;
+                case 2:
+                    if (gPhT > 0.5f && A.Ready && A.st == St.Idle && B.Ready)
+                    {
+                        B.Face(A);
+                        if (B.codex && U.Ch(0.33))
+                        {
+                            B.gHits++;
+                            if (U.Ch(0.4)) B.Go(St.Trip, 1.9f);
+                            else { B.DoMove((gMove + 1 + U.R.Next(6)) % 7); B.SayLater(1.3f, U.Pick("Ой, это не то...", "Так? Нет?", "Я художник, я так вижу")); }
+                        }
+                        else { B.DoMove(gMove); if (U.Ch(0.3)) B.Say(U.Pick("Легко!", "Вот так?", "Повторил!"), 1.2f); }
+                        gPh = 3; gPhT = 0;
+                    }
+                    break;
+                case 3:
+                    if (gPhT > 0.5f && B.Ready && B.st == St.Idle && A.Ready)
+                    {
+                        gN++;
+                        if (gN >= gGoal)
+                        {
+                            if (B.gHits > 0) { A.Go(St.Laugh, 1.3f); A.Say(U.Pick("Ну почти!", "Ха-ха, засчитано!", "Старайся лучше!"), 1.6f); B.Go(St.Happy, 1f); }
+                            else { A.Go(St.Happy, 1.1f); A.Say(U.Pick("Молодец!", "Всё верно!", "Отлично!"), 1.5f); B.Go(St.Celebrate, 1.4f); }
+                            EndGame(); return;
+                        }
+                        gPh = 1; gPhT = 0;
+                    }
+                    break;
+            }
+        }
+
+        // ---------- nap together ----------
+        void TickNap(float dt)
+        {
+            Pet A = gA, B = gB;
+            if (gPh == 0)
+            {
+                if (!GetTogether(13 * u)) return;
+                A.Go(St.Yawn, 1.6f); B.Go(St.Yawn, 1.6f); gPh = 1; gPhT = 0; return;
+            }
+            if (gPhT > 1.7f)
+            {
+                A.Go(St.Sleep, U.Rf(18, 35)); B.Go(St.Sleep, U.Rf(18, 35));
+                Pet snorer = B.codex ? B : A;
+                snorer.SayLater(2.5f, U.Pick("Хр-р-р... пс-с-с...", "Хр-р... баги... хр-р...", "Zzz... ещё пять минуток..."));
+                EndGame();
+            }
+        }
+
+        // ---------- who jumps higher ----------
+        void TickJump(float dt)
+        {
+            Pet A = gA, B = gB;
+            if (gPh == 0) { if (!GetTogether(20 * u)) return; gPh = 1; gPhT = 0; gN = 0; return; }
+            bool calm = A.Ready && B.Ready && A.st == St.Idle && B.st == St.Idle;
+            if (!calm || gPhT < 0.6f) return;
+            if (gN >= gGoal)
+            {
+                Pet win = A.gBest == B.gBest ? null : (A.gBest > B.gBest ? A : B);
+                if (win == null) { A.Go(St.Laugh, 1.2f); B.Go(St.Laugh, 1.2f); A.Say("Ничья!", 1.4f); }
+                else
+                {
+                    Pet lose = win == A ? B : A;
+                    win.Go(St.Celebrate, 1.6f);
+                    win.Say(win.codex ? U.Pick("Я выше! Я почти взлетел!", "Кодекс в космосе!") : U.Pick("Я выше!", "Рекорд!"), 1.6f);
+                    lose.Go(lose.codex ? St.Sad : St.Laugh, 1.3f);
+                }
+                EndGame(); return;
+            }
+            Pet J = gN % 2 == 0 ? A : B, O = J == A ? B : A;
+            float v = U.Rf(380, 660);
+            bool flop = J.codex && U.Ch(0.25);
+            if (flop) v = 200;
+            J.gBest = Math.Max(J.gBest, v);
+            J.Face(O);
+            J.leaping = true; J.leapVx = 0; J.leapVy = -v * k; J.Go(St.Prep, 0.25f);
+            if (flop) J.SayLater(1.2f, U.Pick("Это была разминка!", "Не считается!"));
+            else if (v > 580) O.SayLater(0.7f, U.Pick("Ого!", "Вот это да!", "Высоко!"));
+            else if (U.Ch(0.3)) J.Say(U.Pick("Хоп!", "Смотри!", "Йе!"), 1f);
+            gN++; gPhT = 0;
         }
     }
 }

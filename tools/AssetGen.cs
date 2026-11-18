@@ -45,6 +45,7 @@ namespace Clawdling
         internal void SetLook(float lx, float ly) { lookX = lx; lookY = ly; }
         internal void SetSnow(float a, int side) { snowOnBody = a; snowSide = side; }
         internal void SetDur(float d) { dur = d; }
+        internal void SetVy(float v) { vy = v * k; }
         internal St State { get { return st; } }
         internal float Unit { get { return u; } }
         internal int Dir { get { return dir; } }
@@ -150,6 +151,35 @@ namespace Clawdling
             Still(cxn, "cn_windup.png", St.WindUp, 0.1f, -1, null);
             Still(plain, "e_brawl.png", St.Brawl, 0.4f, 1, null);
             Still(plain, "e_high5.png", St.HighFive, 0.5f, 1, null);
+            // new solo actions + duo poses
+            Still(plain, "e_juggle.png", St.Juggle, 0.4f, 1, null);
+            Still(plain, "e_zen.png", St.Zen, 1.0f, 1, null);
+            Still(plain, "e_stretch.png", St.Stretch, 0.2f, 1, null);
+            Still(plain, "e_stretch2.png", St.Stretch, 0.9f, 1, null);
+            Still(plain, "e_hug.png", St.Hug, 0.4f, 1, null);
+            Still(plain, "e_cover.png", St.Cover, 0.3f, 1, null);
+            Still(plain, "e_sneeze.png", St.Sneeze, 0.95f, 1, null);
+            Still(plain, "e_jump.png", St.Jump, 0f, 1, p => p.SetVy(-200));
+            Still(plain, "e_walkl.png", St.Walk, 0.3f, -1, null);
+            Still(plain, "e_dance2.png", St.Dance, 0.95f, -1, null);
+            Still(cx, "c_juggle.png", St.Juggle, 0.7f, -1, null);
+            Still(cx, "c_spin.png", St.Spin, 0.9f, -1, null);
+            Still(cx, "c_hug.png", St.Hug, 0.5f, -1, null);
+            Still(cx, "c_sneeze.png", St.Sneeze, 0.4f, -1, null);
+            Still(cx, "c_sleep.png", St.Sleep, 2.4f, -1, null);
+            Still(cx, "c_dance.png", St.Dance, 0.6f, -1, null);
+            Still(cx, "c_celebrate.png", St.Celebrate, 0.55f, -1, null);
+            Still(cx, "c_sad.png", St.Sad, 0.45f, -1, null);
+            Still(cx, "c_wave.png", St.Wave, 0.35f, -1, null);
+            Still(cx, "c_love.png", St.Love, 1.25f, -1, null);
+            Still(cx, "c_walk.png", St.Walk, 0.3f, 1, null);
+            Still(cx, "c_walkl.png", St.Walk, 0.45f, -1, null);
+            Still(cx, "c_peek.png", St.Peek, 1.0f, -1, null);
+            Still(cx, "c_stretch.png", St.Stretch, 0.9f, -1, null);
+            Still(cx, "c_jump.png", St.Jump, 0f, -1, p => p.SetVy(-200));
+            Still(cx, "c_lookup.png", St.Idle, 0.2f, -1, p => p.SetLook(-0.5f, -0.8f));
+            Still(cxn, "cn_hit.png", St.Hit, 0.3f, -1, p => p.SetSnow(1, -1));
+            Still(cxn, "cn_happy.png", St.Happy, 0.12f, -1, null);
 
             // ---- animations (20 fps) ----
             float fdt = 0.05f;
@@ -179,6 +209,29 @@ namespace Clawdling
                     }
                 }
             }
+            // duo scenes (Claude faces right, Codex faces left)
+            {
+                int i = 0;
+                using (var log = new StreamWriter(Path.Combine(outDir, "duo.txt")))
+                {
+                    Action<St, St, float, int> scene = (sa, sb, len, gap) =>
+                    {
+                        plain.Pose(sa, 1); cx.Pose(sb, -1);
+                        for (float tt = 0; tt < len; tt += fdt)
+                        {
+                            plain.Step(fdt, false); cx.Step(fdt, false);
+                            Save(plain.Frame(), "da" + i.ToString("000") + ".png");
+                            Save(cx.Frame(), "db" + i.ToString("000") + ".png");
+                            log.WriteLine(i + " " + gap); i++;
+                        }
+                    };
+                    scene(St.Dance, St.Dance, 2.4f, 16);
+                    scene(St.HighFive, St.HighFive, 1.3f, 12);
+                    scene(St.Juggle, St.Spin, 1.8f, 22);
+                    scene(St.Laugh, St.Hit, 1.2f, 22);
+                    scene(St.Hug, St.Hug, 2.6f, 9);
+                }
+            }
             // notification: idle -> celebrate
             {
                 ny.Pose(St.Idle, 1);
@@ -198,6 +251,8 @@ namespace Clawdling
             Save(bub.Snap(0, "", "Хо-хо-хо!", true), "b_speech_dark.png");
             Save(bub.Snap(0, "", "Ах так?! Ну держись!", true), "b_speech2_dark.png");
             Save(bub.Snap(0, "", "Привет! Я Клод", true), "b_hello_dark.png");
+            Save(bub.Snap(0, "", "Эй! Это нечестно!", true), "b_codex_dark.png");
+            Save(bub.Snap(0, "", "Дай пять!", true), "b_five_dark.png");
 
             // ---- snow ----
             var strip = new SnowStrip(plain, 2f);

@@ -6,7 +6,7 @@
 
 *A tiny pixel desktop pet for Windows that lives on your taskbar, wanders around the screen and pops up with Claude Code notifications. English summary below.*
 
-- Один `.exe` на ~90 КБ, без установки и зависимостей (используется .NET Framework 4.8, который уже есть в Windows 10/11)
+- Один `.exe` на ~120 КБ, без установки и зависимостей (используется .NET Framework 4.8, который уже есть в Windows 10/11)
 - Работает в фоне, ~10 МБ памяти, почти не грузит процессор
 - Прячется, когда открыто полноэкранное приложение (игра, видео) на его мониторе
 
@@ -42,13 +42,32 @@
 
 <p align="center"><img src="docs/snowball.gif" width="600" alt="Клод лепит и кидает снежок"></p>
 
-**Кодекс — второй питомец.** Зелёный, как GPT, такой же формы, но чуть глуповатый: глаза разного размера, торчит язык, спотыкается на бегу, иногда кидает снежок себе на голову и забывает, зачем пришёл. Вместе с Клодом они часто играют:
+## Клод и Кодекс
+
+![Клод и Кодекс](docs/duo.png)
+
+**Кодекс — второй питомец.** Зелёный, как GPT, такой же формы, но чуть глуповатый: глаза разного размера, торчит язык, спотыкается на бегу, иногда кидает снежок себе на голову и забывает, зачем пришёл. Каждые 15–40 секунд они с Клодом сами начинают какую-нибудь игру:
+
+<p align="center"><img src="docs/duo.gif" width="600" alt="Клод и Кодекс танцуют, дают пять и обнимаются"></p>
+
 - **Догонялки**: салят друг друга, а прижатый к краю экрана перепрыгивает через догоняющего
 - **Драка**: облако пыли со звёздочками, проигравший видит звёздочки и может потребовать реванш
 - **Снежная битва** (в новогоднем режиме): разбегаются и закидывают друг друга снежками, уворачиваются, считают попадания
-- **Чехарда**, **Дай пять**, **Танец**, а ещё Кодекс любит подкрасться к спящему Клоду и крикнуть «БУ!»
+- **Гонки**: «На старт... Марш!» и наперегонки по панели задач. Кодекс иногда спотыкается на полпути
+- **Прятки**: один закрывает глаза лапками и считает, другой ныряет в панель задач. Кодекс прячется плохо и выглядывает
+- **Кто выше прыгнет**: прыгают по очереди, победитель празднует
+- **Повторялка**: один показывает движение, второй повторяет. Кодекс иногда путает и делает что-то своё
+- **Чехарда**, **Дай пять**, **Танец**, **Обнимашки** с сердечками
+- **Тихий час**: зевают и засыпают рядом, Кодекс храпит
+- **Розыгрыш «БУ!»**: Кодекс подкрадывается к спящему Клоду и пугает, а потом убегает от него
 
-Включается и выключается в меню → «Кодекс», там же можно запустить любую игру.
+![Игры](docs/games.png)
+
+**Когда скучно одному**, они жонглируют (Кодекс роняет мячики себе на голову), медитируют в воздухе, делают зарядку, чихают, кружатся, пытаясь поймать свой хвост, и машут друг другу, если оказались рядом.
+
+![Одиночные действия](docs/solo.png)
+
+Кодекс включается и выключается в меню → «Кодекс», там же в «Играть» можно запустить любую игру. Жонглирование, зарядка и медитация есть в меню → «Действия».
 
 ## Установка
 
@@ -82,7 +101,9 @@
 Clawdling.exe notify "текст" "заголовок" done|attn|info   — показать уведомление
 Clawdling.exe ask "текст"                                 — спросить; выводит allow / deny / none
 Clawdling.exe hook                                        — режим хука Claude Code (JSON на stdin)
-Clawdling.exe play tag|fight|snow|leap|five|dance         — Клод и Кодекс начинают игру
+Clawdling.exe play <игра>                                 — Клод и Кодекс начинают игру:
+                                                            tag, fight, snow, race, seek, leap, jump,
+                                                            copy, five, hug, dance, nap, prank
 Clawdling.exe codex '<json>'                              — уведомление от OpenAI Codex CLI (его показывает Кодекс)
 ```
 
@@ -106,7 +127,7 @@ build.cmd
 
 ## English
 
-Clawdling is a lightweight (~90 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, leapfrog, high fives and dancing; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
+Clawdling is a lightweight (~120 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, races, hide-and-seek in the taskbar, high jump, copycat, leapfrog, high fives, hugs, dancing, naps and a "boo!" prank; on their own they juggle, meditate, stretch, sneeze and spin; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
 
 ---
 
