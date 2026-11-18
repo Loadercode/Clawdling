@@ -86,6 +86,14 @@
 
 > Windows SmartScreen может предупредить о неизвестном издателе — exe не подписан. «Подробнее» → «Выполнить в любом случае», либо собери сам (см. ниже).
 
+## Обновления
+
+Начиная с версии 1.4.0 Clawdling обновляется сам. Через минуту после запуска и потом раз в 6 часов он проверяет [последний релиз](../../releases/latest) на GitHub. Если вышла новая версия, Клод скажет об этом, скачает `Clawdling.exe`, проверит его и перезапустится уже обновлённым. Настройки и автозапуск сохраняются.
+
+- Меню → «Обновления»: включить или выключить автообновление, проверить вручную, посмотреть текущую версию
+- Exe скачивается только из релизов этого репозитория по HTTPS и перед заменой проверяется: размер, имя сборки и что он сообщает ровно ту версию, что указана в релизе
+- Если папка с exe недоступна для записи (например, `Program Files`), обновиться не получится — держи exe в `%LOCALAPPDATA%\Programs\Clawdling\`
+
 ## Подключение к Claude Code
 
 Добавь в `%USERPROFILE%\.claude\settings.json` (путь замени на свой; в меню есть пункт «Подключение к Claude Code → Скопировать настройки хуков», он подставит путь сам):
@@ -115,6 +123,7 @@ Clawdling.exe play <игра>                                 — Клод и К
                                                             copy, five, hug, dance, nap, prank,
                                                             tug, stare, rps
 Clawdling.exe codex '<json>'                              — уведомление от OpenAI Codex CLI (его показывает Кодекс)
+Clawdling.exe update                                      — скачать и поставить последнюю версию с GitHub
 ```
 
 Чтобы Кодекс сообщал о завершении работы OpenAI Codex CLI, добавь в `%USERPROFILE%\.codex\config.toml`:
@@ -137,7 +146,7 @@ build.cmd
 
 ## English
 
-Clawdling is a lightweight (~120 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, races, hide-and-seek in the taskbar, high jump, copycat, tug of war, staring contest, rock-paper-scissors, leapfrog, high fives, hugs, dancing, naps and a "boo!" prank (Ctrl+Alt+P starts a random one); thrown pets bounce like rubber balls and knock each other over; they also eat cookies; on their own they juggle, meditate, stretch, sneeze and spin; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
+Clawdling is a lightweight (~120 KB, ~10 MB RAM) desktop pet for Windows 10/11. It walks on the taskbar, climbs screen edges, rides on window title bars, can be dragged and thrown, has a dozen emotions and hides while a fullscreen app is active. A second, slightly goofy pet, Codex (GPT green), plays with Claude: tag, cartoon fights, snowball fights, races, hide-and-seek in the taskbar, high jump, copycat, tug of war, staring contest, rock-paper-scissors, leapfrog, high fives, hugs, dancing, naps and a "boo!" prank (Ctrl+Alt+P starts a random one); thrown pets bounce like rubber balls and knock each other over; they also eat cookies; the exe updates itself from GitHub releases (menu → «Обновления», or `Clawdling.exe update`); on their own they juggle, meditate, stretch, sneeze and spin; it can also show OpenAI Codex CLI notifications (`notify = [".../Clawdling.exe", "codex"]`). Hooked into Claude Code (`Stop`, `Notification`, `PermissionRequest` hooks → `Clawdling.exe hook`) it pops up when Claude finishes, needs your attention or asks for permission (with Allow / Deny buttons). New Year mode adds a Santa hat, snow on the taskbar and snowball fights (grab snow from the taskbar and throw it, or press Ctrl+Alt+S). Build with `build.cmd` (uses the C# compiler that ships with .NET Framework).
 
 ---
 

@@ -107,6 +107,11 @@ namespace Clawdling
             if (cfg.Hidden) Hide();
             UpdateStrip();
             if (leader == null && cfg.Codex) SetBuddy(true);
+            if (leader == null)
+            {
+                Updater.CleanupLater();
+                if (Program.UpdatedFrom != null) { greeted = true; updGreetT = 2.5f; }
+            }
         }
 
         protected override void WndProc(ref Message m)
@@ -138,6 +143,7 @@ namespace Clawdling
             double now = sw.Elapsed.TotalSeconds; float dt = (float)(now - last); last = now;
             if (dt > 0.1f) dt = 0.1f; if (dt <= 0) dt = 0.001f;
             trimT -= dt; if (trimT <= 0) { trimT = 90; N.TrimMemory(); }
+            TickUpdates(dt);
             Frame(dt);
             if (buddy != null) { buddy.Frame(dt); UpdateDuo(dt); }
             bool fast = Busy || (buddy != null && buddy.Busy);
@@ -832,6 +838,7 @@ namespace Clawdling
                 kind = kind.Substring(6);
                 if (buddy != null && buddy.Visible) { buddy.Notify(kind, title, text, reply); return; }
             }
+            if (kind == "restart") { RestartFromCli(title, text); return; }
             if (kind == "play")
             {
                 int gi = Array.IndexOf(playIds, (title ?? "").ToLowerInvariant());
@@ -1696,6 +1703,7 @@ namespace Clawdling
             var hooks = new ToolStripMenuItem("Подключение к Claude Code");
             hooks.DropDownItems.Add("Скопировать настройки хуков", null, (s, e) => CopyHooks());
             menu.Items.Add(hooks);
+            menu.Items.Add(BuildUpdateMenu());
             menu.Items.Add(new ToolStripSeparator());
             miAuto = new ToolStripMenuItem("Запускать вместе с Windows", null, (s, e) => { Cfg.Autostart = !Cfg.Autostart; });
             miHide = new ToolStripMenuItem("Спрятать питомцев", null, (s, e) => { cfg.Hidden = !cfg.Hidden; ApplyVisibility(); if (buddy != null) buddy.ApplyVisibility(); });
@@ -1711,6 +1719,7 @@ namespace Clawdling
             miThrow.Enabled = cfg.NewYear;
             for (int i = 0; i < 3; i++) miSize[i].Checked = cfg.Size == i;
             miAuto.Checked = Cfg.Autostart;
+            miAutoUpd.Checked = cfg.AutoUpdate;
             miHide.Text = cfg.Hidden ? "Показать питомцев" : "Спрятать питомцев";
             miCodex.Checked = buddy != null;
             for (int i = 0; i < miGames.Length; i++)
@@ -1752,12 +1761,13 @@ namespace Clawdling
                             "Clawdling", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        void ExitApp()
+        void ExitApp(Action beforeExit = null)
         {
             try { N.UnregisterHotKey(Handle, 1); N.UnregisterHotKey(Handle, 2); } catch { }
             bubble.Kill();
             if (buddy != null) buddy.bubble.Kill();
             tray.Visible = false; tray.Dispose();
+            if (beforeExit != null) { Hide(); if (buddy != null) buddy.Hide(); try { beforeExit(); } catch { } }
             Application.Exit();
         }
     }

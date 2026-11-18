@@ -16,6 +16,16 @@ namespace Clawdling
 {
     static class Program
     {
+        /// <summary>Set when started by the updater ("updated &lt;old version&gt;").</summary>
+        public static string UpdatedFrom;
+        static Mutex instance;
+
+        /// <summary>Frees the single-instance lock so a freshly updated exe can start right away.</summary>
+        public static void ReleaseInstance()
+        {
+            try { if (instance != null) { instance.ReleaseMutex(); instance.Dispose(); instance = null; } } catch { }
+        }
+
         [STAThread]
         static int Main(string[] args)
         {
@@ -24,7 +34,9 @@ namespace Clawdling
             {
                 string a = args[0].ToLowerInvariant().TrimStart('-', '/');
                 if (a == "hook") return HookClient.RunHook();
-                if (a == "version") { HookClient.WriteOut("Clawdling 1.3.0\n"); return 0; }
+                if (a == "version") { HookClient.WriteOut("Clawdling " + Updater.CurrentText + "\n"); return 0; }
+                if (a == "update") return Updater.RunCli();
+                if (a == "updated") UpdatedFrom = args.Length > 1 ? args[1] : "";
                 if (a == "notify")
                 {
                     HookClient.Send(args.Length > 3 ? args[3] : "info", args.Length > 2 ? args[2] : "Claude", args.Length > 1 ? args[1] : "");
@@ -42,18 +54,25 @@ namespace Clawdling
             }
             bool created;
             var mtx = new Mutex(true, "Local\\Clawdling_Instance_v1", out created);
+            // after an update the old process may still be closing: wait for it
+            for (int i = 0; i < 60 && !created && UpdatedFrom != null; i++)
+            {
+                mtx.Dispose(); Thread.Sleep(250);
+                mtx = new Mutex(true, "Local\\Clawdling_Instance_v1", out created);
+            }
             if (!created) { HookClient.Send("say", "", "Я уже здесь!"); return 0; }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            instance = mtx;
             Application.Run(new Pet());
-            GC.KeepAlive(mtx);
+            ReleaseInstance();
             return 0;
         }
     }
 
     class Cfg
     {
-        public bool NewYear, Snow = true, Hidden, Codex = true;
+        public bool NewYear, Snow = true, Hidden, Codex = true, AutoUpdate = true;
         public int Size = 1;
         static string Dir { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Clawdling"); } }
         static string FilePath { get { return Path.Combine(Dir, "settings.ini"); } }
@@ -70,6 +89,7 @@ namespace Clawdling
                         if (k == "newyear") c.NewYear = v == "1";
                         else if (k == "snow") c.Snow = v == "1";
                         else if (k == "codex") c.Codex = v == "1";
+                        else if (k == "autoupdate") c.AutoUpdate = v == "1";
                         else if (k == "size") { int s; if (int.TryParse(v, out s)) c.Size = Math.Max(0, Math.Min(2, s)); }
                     }
             }
@@ -81,7 +101,7 @@ namespace Clawdling
             try
             {
                 Directory.CreateDirectory(Dir);
-                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\ncodex=" + (Codex ? 1 : 0) + "\r\n");
+                File.WriteAllText(FilePath, "newyear=" + (NewYear ? 1 : 0) + "\r\nsnow=" + (Snow ? 1 : 0) + "\r\nsize=" + Size + "\r\ncodex=" + (Codex ? 1 : 0) + "\r\nautoupdate=" + (AutoUpdate ? 1 : 0) + "\r\n");
             }
             catch { }
         }
